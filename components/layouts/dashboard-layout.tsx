@@ -1,49 +1,40 @@
-'use client'
-
-import { useAuth } from '@/hooks/use-auth'
-import { Button } from '@/components/ui/button'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { BookOpen, LogOut, User } from 'lucide-react'
+import { BookOpen } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { UserStatusBadge } from '@/components/ui/status-badge'
+import { UserMenu } from './user-menu'
+import type { ProfileWithDetails } from '@/types/database'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
 }
 
-export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { user, profile, signOut, loading } = useAuth()
-  const router = useRouter()
-
-  const handleSignOut = async () => {
-    await signOut()
-    router.push('/auth/signin')
+export async function DashboardLayout({ children }: DashboardLayoutProps) {
+  const supabase = await createClient()
+  
+  // Get the current user
+  const { data: { user }, error } = await supabase.auth.getUser()
+  
+  // If no user, redirect to signin
+  if (!user || error) {
+    redirect('/auth/signin')
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <BookOpen className="h-12 w-12 mx-auto animate-pulse text-primary" />
-          <p className="text-muted-foreground">Chargement...</p>
-        </div>
-      </div>
-    )
-  }
+  // Get user profile
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select(`
+      *,
+      country:countries(*),
+      series:series(*)
+    `)
+    .eq('id', user.id)
+    .single()
 
-  if (!user || !profile) {
-    router.push('/auth/signin')
-    return null
+  // If no profile found, redirect to signin
+  if (!profile) {
+    redirect('/auth/signin')
   }
 
   return (
@@ -60,47 +51,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* User Menu */}
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={profile.avatar_url || ''} alt={profile.full_name || ''} />
-                    <AvatarFallback>
-                      {profile.full_name?.split(' ').map(n => n[0]).join('') || 
-                       profile.email?.substring(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-2">
-                    <p className="text-sm font-medium leading-none">
-                      {profile.full_name || 'Utilisateur'}
-                    </p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      {profile.email}
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">
-                        {profile.country?.name} • {profile.role}
-                      </span>
-                      <UserStatusBadge status={profile.status} />
-                    </div>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Se déconnecter</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <UserMenu profile={profile as ProfileWithDetails} />
           </div>
         </div>
       </header>

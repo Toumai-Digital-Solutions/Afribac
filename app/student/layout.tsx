@@ -1,6 +1,6 @@
 import { DashboardLayout } from '@/components/layouts/dashboard-layout'
 
-export default function StudentLayout({
+export default async function StudentLayout({
   children,
 }: {
   children: React.ReactNode

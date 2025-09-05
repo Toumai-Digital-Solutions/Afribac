@@ -1,65 +1,51 @@
-'use client'
-
-import { useAuth } from '@/hooks/use-auth'
-import { useEffect, useState } from 'react'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
 import { getCollaborationStats } from '@/lib/collaboration'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { BookOpen, Users, FileEdit, BarChart3, Plus, Loader2 } from 'lucide-react'
+import { BookOpen, Users, FileEdit, BarChart3, Plus } from 'lucide-react'
 import Link from 'next/link'
 import { UserStatusBadge } from '@/components/ui/status-badge'
-import { useRouter } from 'next/navigation'
 
-export default function MemberDashboard() {
-  const { user, profile, loading, isMember } = useAuth()
-  const router = useRouter()
-  const [collaborationStats, setCollaborationStats] = useState<any>(null)
-  const [statsLoading, setStatsLoading] = useState(true)
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.replace('/auth/signin')
-    } else if (!loading && user && !isMember && profile) {
-      // Redirect non-members to their appropriate dashboard
-      if (profile.role === 'admin') {
-        router.replace('/admin/dashboard')
-      } else if (profile.role === 'user') {
-        router.replace('/student/dashboard')
-      }
-    }
-  }, [user, profile, loading, isMember, router])
-
-  useEffect(() => {
-    const loadStats = async () => {
-      if (profile && isMember) {
-        const stats = await getCollaborationStats()
-        setCollaborationStats(stats)
-        setStatsLoading(false)
-      }
-    }
-    loadStats()
-  }, [profile, isMember])
-
-  if (loading || statsLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto" />
-          <p className="text-muted-foreground">Chargement du tableau de bord...</p>
-        </div>
-      </div>
-    )
+export default async function MemberDashboard() {
+  const supabase = await createClient()
+  
+  // Get the current user
+  const { data: { user }, error } = await supabase.auth.getUser()
+  
+  // If no user, redirect to signin
+  if (!user || error) {
+    redirect('/auth/signin')
   }
 
-  if (!user || !profile || !isMember) {
-    return (
-      <div className="container mx-auto px-4 py-8 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <p className="text-muted-foreground">Redirection en cours...</p>
-        </div>
-      </div>
-    )
+  // Get user profile
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select(`
+      *,
+      country:countries(*),
+      series:series(*)
+    `)
+    .eq('id', user.id)
+    .single()
+
+  // If no profile found, redirect to signin
+  if (!profile) {
+    redirect('/auth/signin')
   }
+
+  // Check if user is a member
+  if (profile.role !== 'member') {
+    // Redirect non-members to their appropriate dashboard
+    if (profile.role === 'admin') {
+      redirect('/admin/dashboard')
+    } else {
+      redirect('/student/dashboard')
+    }
+  }
+
+  // Load collaboration stats
+  const collaborationStats = await getCollaborationStats(supabase, profile)
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-6">

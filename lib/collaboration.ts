@@ -1,12 +1,13 @@
-import { supabase } from './supabase'
+import { createClient } from './supabase'
 import { getCurrentUserProfile } from './database'
-import type { Course, Profile } from '@/types/database'
+import type { Course, Profile, ProfileWithDetails } from '@/types/database'
 
 // Get all members from the same country for collaboration
 export async function getCountryCollaborators() {
   const profile = await getCurrentUserProfile()
   if (!profile || profile.role !== 'member') return []
 
+  const supabase = createClient()
   const { data: collaborators } = await supabase
     .from('profiles')
     .select('id, full_name, email, avatar_url, created_at')
@@ -20,6 +21,7 @@ export async function getCountryCollaborators() {
 
 // Get all courses that can be collaboratively edited
 export async function getCollaborativeCourses() {
+  const supabase = createClient()
   const { data: courses } = await supabase
     .from('courses')
     .select(`
@@ -36,6 +38,7 @@ export async function getCollaborativeCourses() {
 export async function getCourseEditHistory(courseId: string) {
   // This would require an audit log table in the future
   // For now, we can track basic info from the course record
+  const supabase = createClient()
   const { data: course } = await supabase
     .from('courses')
     .select(`
@@ -61,6 +64,7 @@ export async function canCollaborateOnCourse(courseId: string): Promise<boolean>
 
   // Members can edit courses from their country (RLS will handle filtering)
   if (profile.role === 'member') {
+    const supabase = createClient()
     const { data: course } = await supabase
       .from('courses')
       .select('id')
@@ -75,8 +79,15 @@ export async function canCollaborateOnCourse(courseId: string): Promise<boolean>
 }
 
 // Get collaborative statistics for members
-export async function getCollaborationStats() {
-  const profile = await getCurrentUserProfile()
+export async function getCollaborationStats(supabase?: any, profile?: ProfileWithDetails | null) {
+  if (!supabase) {
+    supabase = createClient()
+  }
+  
+  if (!profile) {
+    profile = await getCurrentUserProfile()
+  }
+  
   if (!profile || profile.role !== 'member') return null
 
   const [coursesResult, collaboratorsResult] = await Promise.all([

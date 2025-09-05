@@ -1,6 +1,6 @@
 import { DashboardLayout } from '@/components/layouts/dashboard-layout'
 
-export default function MemberLayout({
+export default async function MemberLayout({
   children,
 }: {
   children: React.ReactNode

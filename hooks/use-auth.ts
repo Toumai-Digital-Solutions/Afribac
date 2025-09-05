@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { User } from '@supabase/supabase-js'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase'
 import { getCurrentUserProfile } from '@/lib/database'
 import type { ProfileWithDetails } from '@/types/database'
 
@@ -11,9 +11,13 @@ export function useAuth() {
   const [profile, setProfile] = useState<ProfileWithDetails | null>(null)
   const [loading, setLoading] = useState(true)
 
+  // Create supabase client
+  const supabase = createClient()
+
   const loadProfile = async (user: User | null) => {
     if (user) {
       const userProfile = await getCurrentUserProfile()
+      console.log('userProfile', userProfile)
       setProfile(userProfile)
     } else {
       setProfile(null)

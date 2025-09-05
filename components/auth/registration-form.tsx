@@ -8,11 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { signUp } from '@/lib/supabase/auth'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase'
 import { AlertCircle, Loader2 } from 'lucide-react'
 import type { Country, Series } from '@/types/database'
 
 export function RegistrationForm() {
+  // Create supabase client
+  const supabase = createClient()
+  
   const [formData, setFormData] = useState({
     email: '',
     password: '',

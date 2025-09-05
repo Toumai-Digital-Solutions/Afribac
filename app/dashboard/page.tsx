@@ -1,57 +1,37 @@
-'use client'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuth } from '@/hooks/use-auth'
-import { Loader2, BookOpen } from 'lucide-react'
+export default async function DashboardRedirect() {
+  const supabase = await createClient()
+  
+  // Get the current user
+  const { data: { user }, error } = await supabase.auth.getUser()
+  
+  // If no user, redirect to signin
+  if (!user || error) {
+    redirect('/auth/signin')
+  }
 
-export default function DashboardRedirect() {
-  const { user, profile, loading } = useAuth()
-  const router = useRouter()
+  // Get user profile
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select(`
+      *,
+      country:countries(*),
+      series:series(*)
+    `)
+    .eq('id', user.id)
+    .single()
 
-  useEffect(() => {
-    console.log('Dashboard redirect - Loading:', loading, 'User:', !!user, 'Profile:', !!profile, 'Role:', profile?.role)
-    
-    if (!loading) {
-      if (user && profile) {
-        // Redirect based on role
-        const targetRoute = profile.role === 'admin' ? '/admin/dashboard' 
-                          : profile.role === 'member' ? '/member/dashboard'
-                          : '/student/dashboard'
-        
-        console.log('Redirecting to:', targetRoute)
-        router.replace(targetRoute)
-      } else if (user && !profile) {
-        // User exists but profile not loaded - wait a moment
-        console.log('User exists but profile not loaded, waiting...')
-        const timeout = setTimeout(() => {
-          console.log('Profile still not loaded after timeout, redirecting to auth')
-          router.replace('/auth/signin')
-        }, 3000)
-        
-        return () => clearTimeout(timeout)
-      } else if (!user) {
-        // Not authenticated
-        console.log('No user, redirecting to sign in')
-        router.replace('/auth/signin')
-      }
-    }
-  }, [user, profile, loading, router])
+  // If no profile found, redirect to signin
+  if (!profile) {
+    redirect('/auth/signin')
+  }
 
-  // Loading state
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center space-y-4">
-        <div className="flex justify-center">
-          <BookOpen className="h-12 w-12 animate-pulse text-primary" />
-        </div>
-        <div className="space-y-2">
-          <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-          <p className="text-muted-foreground">
-            Redirection vers votre tableau de bord...
-          </p>
-        </div>
-      </div>
-    </div>
-  )
+  // Redirect based on role
+  const targetRoute = profile.role === 'admin' ? '/admin/dashboard' 
+                    : profile.role === 'member' ? '/member/dashboard'
+                    : '/student/dashboard'
+  
+  redirect(targetRoute)
 }

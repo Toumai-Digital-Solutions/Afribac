@@ -1,5 +1,7 @@
-import { supabase } from './supabase'
+import { createClient } from './supabase'
 import { getCurrentUserProfile } from './database'
+
+const supabase = createClient()
 
 // Upload course material with country-based path structure
 export async function uploadCourseMaterial(

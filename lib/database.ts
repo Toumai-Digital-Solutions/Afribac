@@ -1,8 +1,8 @@
-import { supabase } from './supabase'
+import { createClient } from './supabase'
 import type { Database, Profile, ProfileWithDetails, UserRole } from '@/types/database'
 
-// Get current user's profile with related data
 export async function getCurrentUserProfile(): Promise<ProfileWithDetails | null> {
+  const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
@@ -21,6 +21,7 @@ export async function getCurrentUserProfile(): Promise<ProfileWithDetails | null
 
 // Get user profile by ID (respects RLS)
 export async function getUserProfile(userId: string): Promise<Profile | null> {
+  const supabase = createClient()
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')
@@ -67,6 +68,7 @@ export async function getAccessibleCountries() {
 
   // All users (including admin) will see countries based on RLS
   // Admin sees all, users/members see only their own
+  const supabase = createClient()
   const { data: countries } = await supabase
     .from('countries')
     .select('*')
@@ -77,6 +79,7 @@ export async function getAccessibleCountries() {
 
 // Get series for current user's country
 export async function getAccessibleSeries() {
+  const supabase = createClient()
   const { data: series } = await supabase
     .from('series')
     .select(`
@@ -90,6 +93,7 @@ export async function getAccessibleSeries() {
 
 // Get subjects with series associations for current user
 export async function getAccessibleSubjects() {
+  const supabase = createClient()
   const { data: subjects } = await supabase
     .from('subjects')
     .select(`
@@ -115,6 +119,7 @@ export async function upsertProfile(userId: string, profileData: {
   series_id?: string
   role?: UserRole
 }) {
+  const supabase = createClient()
   const { data, error } = await (supabase as any)
     .from('profiles')
     .upsert({
@@ -130,6 +135,7 @@ export async function upsertProfile(userId: string, profileData: {
 
 // Check if user exists and get their basic info
 export async function checkUserExists(email: string): Promise<boolean> {
+  const supabase = createClient()
   const { data } = await supabase
     .from('profiles')
     .select('id')
@@ -141,6 +147,7 @@ export async function checkUserExists(email: string): Promise<boolean> {
 
 // Get all profiles for admin/member management (respects RLS)
 export async function getManageableProfiles() {
+  const supabase = createClient()
   const { data: profiles } = await supabase
     .from('profiles')
     .select(`
@@ -159,6 +166,7 @@ export async function getAccessibleCourses() {
   const profile = await getCurrentUserProfile()
   if (!profile) return []
 
+  const supabase = createClient()
   let query = supabase
     .from('courses')
     .select(`
@@ -181,6 +189,7 @@ export async function getAccessibleCourses() {
 
 // Update user status (admin only operation)
 export async function updateUserStatus(userId: string, status: 'active' | 'suspended' | 'deleted') {
+  const supabase = createClient()
   const { data, error } = await (supabase as any)
     .from('profiles')
     .update({ status, updated_at: new Date().toISOString() })
@@ -193,6 +202,7 @@ export async function updateUserStatus(userId: string, status: 'active' | 'suspe
 
 // Update course status
 export async function updateCourseStatus(courseId: string, status: 'draft' | 'publish' | 'archived') {
+  const supabase = createClient()
   const { data, error } = await (supabase as any)
     .from('courses')
     .update({ status, updated_at: new Date().toISOString() })

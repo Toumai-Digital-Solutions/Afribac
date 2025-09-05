@@ -1,27 +1,36 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { updateSession } from '@/lib/supabase/middleware'
 
-export async function middleware(req: NextRequest) {
-  const pathname = req.nextUrl.pathname
-
-  // Simple approach: Let client-side handle auth state management
-  // Only redirect from auth pages if there's a session indication
+export async function middleware(request: NextRequest) {
+  const { supabaseResponse, user } = await updateSession(request)
   
-  // Check for auth token in cookies (Supabase default cookie names)
-  const hasSession = req.cookies.has('sb-access-token') || 
-                    req.cookies.has('supabase.auth.token') ||
-                    req.cookies.has('sb-refresh-token')
+  const pathname = request.nextUrl.pathname
 
-  // If user appears to be logged in and is on auth pages, redirect to dashboard
-  if (hasSession && pathname.startsWith('/auth') && pathname !== '/auth/callback') {
-    return NextResponse.redirect(new URL('/dashboard', req.url))
+  // If user is authenticated and on auth pages (except callback), redirect to dashboard
+  if (user && pathname.startsWith('/auth') && pathname !== '/auth/callback') {
+    const url = request.nextUrl.clone()
+    url.pathname = '/dashboard'
+    return Response.redirect(url)
   }
 
-  // If user appears to be logged in and is on root, redirect to dashboard  
-  if (hasSession && pathname === '/') {
-    return NextResponse.redirect(new URL('/dashboard', req.url))
+  // If user is authenticated and on root, redirect to dashboard  
+  if (user && pathname === '/') {
+    const url = request.nextUrl.clone()
+    url.pathname = '/dashboard'
+    return Response.redirect(url)
   }
 
-  return NextResponse.next()
+  // If user is not authenticated and trying to access protected routes
+  const protectedRoutes = ['/dashboard', '/admin', '/member', '/student']
+  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
+  
+  if (!user && isProtectedRoute) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/auth/signin'
+    return Response.redirect(url)
+  }
+
+  return supabaseResponse
 }
 
 export const config = {
