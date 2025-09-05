@@ -1,13 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { DashboardLayoutClient } from './dashboard-layout-client'
-import type { ProfileWithDetails } from '@/types/database'
+import { ProfileForm } from '@/components/forms/profile-form'
 
-interface DashboardLayoutProps {
-  children: React.ReactNode
-}
-
-export async function DashboardLayout({ children }: DashboardLayoutProps) {
+export default async function ProfilePage() {
   const supabase = await createClient()
   
   // Get the current user
@@ -18,7 +13,7 @@ export async function DashboardLayout({ children }: DashboardLayoutProps) {
     redirect('/auth/signin')
   }
 
-  // Get user profile
+  // Get user profile with details
   const { data: profile } = await supabase
     .from('profiles')
     .select(`
@@ -34,9 +29,26 @@ export async function DashboardLayout({ children }: DashboardLayoutProps) {
     redirect('/auth/signin')
   }
 
+  // Get all countries for the dropdown
+  const { data: countries } = await supabase
+    .from('countries')
+    .select('*')
+    .order('name')
+
+  // Get all series for the dropdown
+  const { data: series } = await supabase
+    .from('series')
+    .select(`
+      *,
+      country:countries(*)
+    `)
+    .order('name')
+
   return (
-    <DashboardLayoutClient profile={profile as ProfileWithDetails}>
-      {children}
-    </DashboardLayoutClient>
+    <ProfileForm 
+      profile={profile} 
+      countries={countries || []} 
+      series={series || []} 
+    />
   )
 }

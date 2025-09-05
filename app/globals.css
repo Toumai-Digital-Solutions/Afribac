@@ -60,7 +60,7 @@
 }
 
 :root {
-  --radius: 0.75rem;
+  --radius: 1.25rem;
   
   /* Educational Color Palette - Inspired by African warmth and learning */
   --background: oklch(0.99 0.005 85);

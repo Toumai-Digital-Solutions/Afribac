@@ -1,17 +1,15 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
+  getPaginationRowModel,
   useReactTable,
   SortingState,
-  ColumnFiltersState,
-  VisibilityState,
 } from "@tanstack/react-table"
 import {
   Table,
@@ -23,12 +21,6 @@ import {
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import {
   Select,
   SelectContent,
@@ -42,66 +34,52 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  Settings2,
   Search,
   Filter,
   X
 } from "lucide-react"
 
-interface DataTableProps<TData, TValue> {
+interface ServerFilteredDataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
-  searchable?: boolean
-  searchPlaceholder?: string
-  filterable?: boolean
-  filterColumn?: string
   filterOptions?: { label: string; value: string }[]
+  roleOptions?: { label: string; value: string }[]
+  currentCountryFilter?: string
+  currentRoleFilter?: string
+  currentSearchFilter?: string
   pageSize?: number
   title?: string
   description?: string
-  loading?: boolean
-  initialFilter?: string
-  initialSearch?: string
 }
 
-export function DataTable<TData, TValue>({
+export function ServerFilteredDataTable<TData, TValue>({
   columns,
   data,
-  searchable = true,
-  searchPlaceholder = "Rechercher...",
-  filterable = false,
-  filterColumn,
   filterOptions = [],
+  roleOptions = [],
+  currentCountryFilter,
+  currentRoleFilter,
+  currentSearchFilter,
   pageSize = 10,
   title,
   description,
-  loading = false,
-  initialFilter,
-  initialSearch
-}: DataTableProps<TData, TValue>) {
+}: ServerFilteredDataTableProps<TData, TValue>) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [sorting, setSorting] = useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-  const [globalFilter, setGlobalFilter] = useState(initialSearch || "")
-  const [filterValue, setFilterValue] = useState<string>(initialFilter || "all")
+  const [searchInput, setSearchInput] = useState(currentSearchFilter || "")
+  const [filterInput, setFilterInput] = useState(currentCountryFilter || "all")
+  const [roleInput, setRoleInput] = useState(currentRoleFilter || "all")
 
   const table = useReactTable({
     data,
     columns,
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onGlobalFilterChange: setGlobalFilter,
-    globalFilterFn: "includesString",
     state: {
       sorting,
-      columnFilters,
-      columnVisibility,
-      globalFilter,
       pagination: {
         pageSize,
         pageIndex: 0,
@@ -109,32 +87,66 @@ export function DataTable<TData, TValue>({
     },
   })
 
-  // Apply initial filter on mount
-  useEffect(() => {
-    if (initialFilter && initialFilter !== "all" && filterColumn) {
-      table.getColumn(filterColumn)?.setFilterValue(initialFilter)
+  const updateUrl = (newSearch?: string, newCountry?: string, newRole?: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    
+    if (newSearch) {
+      params.set('search', newSearch)
+    } else {
+      params.delete('search')
     }
-  }, [initialFilter, filterColumn, table])
+    
+    if (newCountry && newCountry !== 'all') {
+      params.set('country', newCountry)
+    } else {
+      params.delete('country')
+    }
+    
+    if (newRole && newRole !== 'all') {
+      params.set('role', newRole)
+    } else {
+      params.delete('role')
+    }
+    
+    const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`
+    router.push(newUrl)
+  }
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    updateUrl(
+      searchInput.trim() || undefined, 
+      filterInput !== 'all' ? filterInput : undefined,
+      roleInput !== 'all' ? roleInput : undefined
+    )
+  }
 
   const handleFilterChange = (value: string) => {
-    setFilterValue(value)
-    if (filterColumn && value !== "all") {
-      table.getColumn(filterColumn)?.setFilterValue(value)
-    } else if (filterColumn) {
-      table.getColumn(filterColumn)?.setFilterValue("")
-    }
+    setFilterInput(value)
+    updateUrl(
+      searchInput.trim() || undefined, 
+      value !== 'all' ? value : undefined,
+      roleInput !== 'all' ? roleInput : undefined
+    )
+  }
+  
+  const handleRoleChange = (value: string) => {
+    setRoleInput(value)
+    updateUrl(
+      searchInput.trim() || undefined, 
+      filterInput !== 'all' ? filterInput : undefined,
+      value !== 'all' ? value : undefined
+    )
   }
 
   const clearFilters = () => {
-    setGlobalFilter("")
-    setFilterValue("all")
-    setColumnFilters([])
-    if (filterColumn) {
-      table.getColumn(filterColumn)?.setFilterValue("")
-    }
+    setSearchInput("")
+    setFilterInput("all")
+    setRoleInput("all")
+    router.push(window.location.pathname)
   }
 
-  const activeFiltersCount = columnFilters.length + (globalFilter ? 1 : 0) + (filterValue !== "all" ? 1 : 0)
+  const activeFiltersCount = (currentSearchFilter ? 1 : 0) + (currentCountryFilter ? 1 : 0) + (currentRoleFilter ? 1 : 0)
 
   return (
     <div className="space-y-4">
@@ -150,35 +162,57 @@ export function DataTable<TData, TValue>({
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-1 flex-col gap-2 md:flex-row md:items-center md:space-x-2">
           {/* Global Search */}
-          {searchable && (
-            <div className="relative max-w-sm">
+          <form onSubmit={handleSearchSubmit} className="relative max-w-sm flex gap-2">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder={searchPlaceholder}
-                value={globalFilter}
-                onChange={(e) => setGlobalFilter(e.target.value)}
+                placeholder="Rechercher une série..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
                 className="pl-9"
               />
             </div>
-          )}
+            <Button type="submit" size="sm" variant="outline">
+              <Search className="h-4 w-4" />
+            </Button>
+          </form>
 
-          {/* Filter Dropdown */}
-          {filterable && filterColumn && filterOptions.length > 0 && (
-            <Select value={filterValue} onValueChange={handleFilterChange}>
-              <SelectTrigger className="w-[180px]">
-                <Filter className="mr-2 h-4 w-4" />
-                <SelectValue placeholder="Filtrer par..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous</SelectItem>
-                {filterOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
+          {/* Filter Dropdowns */}
+          <div className="flex gap-2">
+            {filterOptions.length > 0 && (
+              <Select value={filterInput} onValueChange={handleFilterChange}>
+                <SelectTrigger className="w-[180px]">
+                  <Filter className="mr-2 h-4 w-4" />
+                  <SelectValue placeholder="Pays..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les pays</SelectItem>
+                  {filterOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            
+            {roleOptions.length > 0 && (
+              <Select value={roleInput} onValueChange={handleRoleChange}>
+                <SelectTrigger className="w-[150px]">
+                  <Filter className="mr-2 h-4 w-4" />
+                  <SelectValue placeholder="Rôle..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les rôles</SelectItem>
+                  {roleOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
 
           {/* Clear Filters */}
           {activeFiltersCount > 0 && (
@@ -200,37 +234,30 @@ export function DataTable<TData, TValue>({
               {activeFiltersCount} filtre{activeFiltersCount > 1 ? 's' : ''}
             </Badge>
           )}
-
-          {/* Column Visibility */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="ml-auto">
-                <Settings2 className="mr-2 h-4 w-4" />
-                Colonnes
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                    >
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
-                  )
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </div>
+
+      {/* Results Summary */}
+              {(currentSearchFilter || currentCountryFilter || currentRoleFilter) && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>{data.length} résultat{data.length !== 1 ? 's' : ''} trouvé{data.length !== 1 ? 's' : ''}</span>
+            {currentSearchFilter && (
+              <Badge variant="secondary" className="text-xs">
+                Recherche: "{currentSearchFilter}"
+              </Badge>
+            )}
+            {currentCountryFilter && (
+              <Badge variant="secondary" className="text-xs">
+                Pays filtré
+              </Badge>
+            )}
+            {currentRoleFilter && (
+              <Badge variant="secondary" className="text-xs">
+                Rôle filtré
+              </Badge>
+            )}
+          </div>
+        )}
 
       {/* Table */}
       <div className="rounded-md border">
@@ -254,18 +281,7 @@ export function DataTable<TData, TValue>({
             ))}
           </TableHeader>
           <TableBody>
-            {loading ? (
-              // Loading skeleton
-              Array.from({ length: pageSize }).map((_, index) => (
-                <TableRow key={index}>
-                  {columns.map((_, colIndex) => (
-                    <TableCell key={colIndex}>
-                      <div className="h-4 bg-muted animate-pulse rounded" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : table.getRowModel().rows?.length ? (
+            {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
@@ -313,14 +329,8 @@ export function DataTable<TData, TValue>({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>
-            {table.getFilteredRowModel().rows.length} résultat
-            {table.getFilteredRowModel().rows.length !== 1 ? 's' : ''} au total
+            {data.length} résultat{data.length !== 1 ? 's' : ''} au total
           </span>
-          {table.getState().globalFilter && (
-            <Badge variant="secondary" className="text-xs">
-              Recherche: "{table.getState().globalFilter}"
-            </Badge>
-          )}
         </div>
 
         <div className="flex items-center gap-2">

@@ -14,6 +14,7 @@ import { LogOut, User } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { UserStatusBadge } from '@/components/ui/status-badge'
 import { createClient } from '@/lib/supabase'
+import { useLoading } from '@/components/providers/loading-provider'
 import type { ProfileWithDetails } from '@/types/database'
 
 interface UserMenuProps {
@@ -22,11 +23,18 @@ interface UserMenuProps {
 
 export function UserMenu({ profile }: UserMenuProps) {
   const router = useRouter()
+  const { startLoading } = useLoading()
 
   const handleSignOut = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/auth/signin')
+    try {
+      startLoading()
+      const supabase = createClient()
+      await supabase.auth.signOut()
+      router.push('/auth/signin')
+    } catch (error) {
+      console.error('Sign out error:', error)
+      // Loading will be stopped by navigation or error boundary
+    }
   }
 
   return (
@@ -60,9 +68,11 @@ export function UserMenu({ profile }: UserMenuProps) {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <User className="mr-2 h-4 w-4" />
-          <span>Profile</span>
+        <DropdownMenuItem asChild>
+          <a href="/dashboard/profile" className="flex w-full items-center cursor-pointer">
+            <User className="mr-2 h-4 w-4" />
+            <span>Profile</span>
+          </a>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>

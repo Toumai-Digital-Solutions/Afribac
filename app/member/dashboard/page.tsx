@@ -48,7 +48,7 @@ export default async function MemberDashboard() {
   const collaborationStats = await getCollaborationStats(supabase, profile)
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-6">
+            <div className="space-y-6">
       {/* Welcome Header */}
       <div className="flex items-center justify-between">
         <div>
