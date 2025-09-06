@@ -248,6 +248,158 @@ export interface Database {
           tag_id?: string
         }
       }
+      course_series: {
+        Row: {
+          id: string
+          course_id: string
+          series_id: string
+          relevance_notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          course_id: string
+          series_id: string
+          relevance_notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          course_id?: string
+          series_id?: string
+          relevance_notes?: string | null
+          created_at?: string
+        }
+      }
+      exams: {
+        Row: {
+          id: string
+          title: string
+          description: string | null
+          questions_content: string | null
+          correction_content: string | null
+          questions_pdf_url: string | null
+          questions_pdf_filename: string | null
+          correction_pdf_url: string | null
+          correction_pdf_filename: string | null
+          exam_type: 'baccalaureat' | 'school_exam' | 'mock_exam' | 'practice_test' | 'other'
+          exam_year: number | null
+          exam_session: string | null
+          duration_minutes: number
+          total_points: number | null
+          subject_id: string
+          series_id: string
+          status: CourseStatus
+          difficulty_level: number
+          view_count: number
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          description?: string | null
+          questions_content?: string | null
+          correction_content?: string | null
+          questions_pdf_url?: string | null
+          questions_pdf_filename?: string | null
+          correction_pdf_url?: string | null
+          correction_pdf_filename?: string | null
+          exam_type: 'baccalaureat' | 'school_exam' | 'mock_exam' | 'practice_test' | 'other'
+          exam_year?: number | null
+          exam_session?: string | null
+          duration_minutes?: number
+          total_points?: number | null
+          subject_id: string
+          series_id: string
+          status?: CourseStatus
+          difficulty_level?: number
+          view_count?: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          description?: string | null
+          questions_content?: string | null
+          correction_content?: string | null
+          questions_pdf_url?: string | null
+          questions_pdf_filename?: string | null
+          correction_pdf_url?: string | null
+          correction_pdf_filename?: string | null
+          exam_type?: 'baccalaureat' | 'school_exam' | 'mock_exam' | 'practice_test' | 'other'
+          exam_year?: number | null
+          exam_session?: string | null
+          duration_minutes?: number
+          total_points?: number | null
+          subject_id?: string
+          series_id?: string
+          status?: CourseStatus
+          difficulty_level?: number
+          view_count?: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      exam_tags: {
+        Row: {
+          exam_id: string
+          tag_id: string
+        }
+        Insert: {
+          exam_id: string
+          tag_id: string
+        }
+        Update: {
+          exam_id?: string
+          tag_id?: string
+        }
+      }
+      exam_attempts: {
+        Row: {
+          id: string
+          user_id: string
+          exam_id: string
+          started_at: string
+          submitted_at: string | null
+          time_spent_minutes: number
+          score: number | null
+          is_completed: boolean
+          answers: any
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          exam_id: string
+          started_at?: string
+          submitted_at?: string | null
+          time_spent_minutes?: number
+          score?: number | null
+          is_completed?: boolean
+          answers?: any
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          exam_id?: string
+          started_at?: string
+          submitted_at?: string | null
+          time_spent_minutes?: number
+          score?: number | null
+          is_completed?: boolean
+          answers?: any
+          created_at?: string
+          updated_at?: string
+        }
+      }
       user_progress: {
         Row: {
           id: string
@@ -306,6 +458,10 @@ export type Subject = Database['public']['Tables']['subjects']['Row']
 export type Profile = Database['public']['Tables']['profiles']['Row']
 export type Course = Database['public']['Tables']['courses']['Row']
 export type Tag = Database['public']['Tables']['tags']['Row']
+export type CourseSeries = Database['public']['Tables']['course_series']['Row']
+export type Exam = Database['public']['Tables']['exams']['Row']
+export type ExamTag = Database['public']['Tables']['exam_tags']['Row']
+export type ExamAttempt = Database['public']['Tables']['exam_attempts']['Row']
 export type UserProgress = Database['public']['Tables']['user_progress']['Row']
 
 // Extended types with relations
@@ -315,6 +471,21 @@ export type SeriesWithCountry = Series & {
 
 export type CourseWithDetails = Course & {
   subject: Subject
+  tags: Tag[]
+  series: Series[]
+  created_by_profile: Profile | null
+}
+
+export type CourseWithFullDetails = Course & {
+  subject: Subject
+  tags: Tag[]
+  series: (Series & { country: Country })[]
+  created_by_profile: Profile | null
+}
+
+export type ExamWithDetails = Exam & {
+  subject: Subject
+  series: Series & { country: Country }
   tags: Tag[]
   created_by_profile: Profile | null
 }

@@ -58,12 +58,14 @@ const navigationItems: NavItem[] = [
         icon: BookOpen,
         roles: ['member', 'admin'],
       },
+
       {
-        title: 'Créer un cours',
-        href: '/dashboard/content/create',
-        icon: PlusCircle,
+        title: 'Sujets',
+        href: '/dashboard/content/exams',
+        icon: FileText,
         roles: ['member', 'admin'],
       },
+
       {
         title: 'Quiz & Exercices',
         href: '/dashboard/content/quiz',
@@ -83,7 +85,7 @@ const navigationItems: NavItem[] = [
     title: 'Paramètres',
     href: '/dashboard/settings',
     icon: Settings,
-    roles: ['member', 'admin'],
+    roles: ['member', 'admin', 'user'],
   },
   
   // Admin Only Navigation

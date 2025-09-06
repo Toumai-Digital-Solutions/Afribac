@@ -22,7 +22,7 @@ import { Trash2, AlertTriangle, Type } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface DeleteConfirmationModalProps {
-  resourceType: 'country' | 'series' | 'subject' | 'user'
+  resourceType: 'country' | 'series' | 'subject' | 'user' | 'exam'
   resourceName: string
   resourceId: string
   trigger?: React.ReactNode
@@ -36,7 +36,13 @@ interface DeleteConfirmationModalProps {
   }
 }
 
-const resourceConfig = {
+const resourceConfig: Record<string, {
+  singular: string
+  plural: string
+  table: string
+  dependencies: string[]
+  warningMessage: string
+}> = {
   country: {
     singular: 'pays',
     plural: 'pays',
@@ -64,6 +70,13 @@ const resourceConfig = {
     table: 'profiles',
     dependencies: ['user_progress', 'courses'],
     warningMessage: 'Attention : Supprimer cet utilisateur supprimera également tous ses progrès et données associées.'
+  },
+  exam: {
+    singular: 'examen',
+    plural: 'examens',
+    table: 'exams',
+    dependencies: ['exam_attempts'],
+    warningMessage: 'Attention : Supprimer cet examen supprimera toutes les tentatives des étudiants associées.'
   }
 }
 
