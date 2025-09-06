@@ -1,21 +1,23 @@
 import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
-import { ExamsTable } from '@/components/tables/exams-table'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { BookOpen, Plus, Filter, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { BookOpen, FileText, Plus, Brain } from 'lucide-react'
+import { QuizExercisesTableWrapper } from '@/components/tables/quiz-exercises-table-wrapper'
+import { QuizExercisesFilters } from '@/components/forms/quiz-exercises-filters'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 
-interface ExamsPageProps {
+interface QuizPageProps {
   searchParams: { [key: string]: string | string[] | undefined }
 }
 
-// Exam query function with filters
-async function getExams(filters: {
+// Get quiz & exercises data
+async function getQuizExercisesData(filters: {
   search?: string
+  content_type?: string
   subject_id?: string
   series_id?: string
-  exam_type?: string
   status?: string
   page?: number
   limit?: number
@@ -23,12 +25,16 @@ async function getExams(filters: {
   const supabase = await createClient()
   
   let query = supabase
-    .from('exam_details')
+    .from('quiz_exercise_details')
     .select('*', { count: 'exact' })
 
   // Apply filters
   if (filters.search) {
     query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`)
+  }
+
+  if (filters.content_type) {
+    query = query.eq('content_type', filters.content_type)
   }
 
   if (filters.subject_id) {
@@ -37,10 +43,6 @@ async function getExams(filters: {
 
   if (filters.series_id) {
     query = query.eq('series_id', filters.series_id)
-  }
-
-  if (filters.exam_type) {
-    query = query.eq('exam_type', filters.exam_type)
   }
 
   if (filters.status) {
@@ -58,11 +60,11 @@ async function getExams(filters: {
   const { data, error, count } = await query
 
   if (error) {
-    console.error('Error fetching exams:', error)
-    return { exams: [], total: 0 }
+    console.error('Error fetching quiz/exercises:', error)
+    return { items: [], total: 0 }
   }
 
-  return { exams: data || [], total: count || 0 }
+  return { items: data || [], total: count || 0 }
 }
 
 // Get filter options
@@ -77,8 +79,7 @@ async function getFilterOptions() {
     supabase.from('series').select(`
       id, 
       name, 
-      country_id,
-      countries(name)
+      countries!inner(name)
     `).order('name')
   ])
 
@@ -92,81 +93,108 @@ async function getFilterOptions() {
   }
 }
 
-const examTypeLabels = {
-  'baccalaureat': 'Baccalauréat',
-  'school_exam': 'Examen scolaire',
-  'mock_exam': 'Examen blanc',
-  'practice_test': 'Test d\'entraînement',
-  'other': 'Autre'
-}
+export default async function QuizPage({ searchParams }: QuizPageProps) {
+  const supabase = await createClient()
+  
+  // Check authentication and permissions
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  
+  if (authError || !user) {
+    redirect('/auth/signin')
+  }
 
-export default async function ExamsPage({ searchParams }: ExamsPageProps) {
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (profileError || !profile || !['member', 'admin'].includes(profile.role)) {
+    redirect('/dashboard')
+  }
+
   // Extract search params
   const search = searchParams.search as string || ''
+  const content_type = searchParams.content_type as string || ''
   const subject_id = searchParams.subject_id as string || ''
   const series_id = searchParams.series_id as string || ''
-  const exam_type = searchParams.exam_type as string || ''
   const status = searchParams.status as string || ''
   const page = parseInt(searchParams.page as string) || 1
 
   // Fetch data
-  const [{ exams, total }, filterOptions] = await Promise.all([
-    getExams({ search, subject_id, series_id, exam_type, status, page }),
+  const [{ items, total }, filterOptions] = await Promise.all([
+    getQuizExercisesData({ search, content_type, subject_id, series_id, status, page }),
     getFilterOptions()
   ])
+
+  const quizzes = items.filter(item => item.content_type === 'quiz')
+  const exercises = items.filter(item => item.content_type === 'exercise')
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Gestion des examens</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Quiz & Exercices</h1>
           <p className="text-muted-foreground">
-            Créez et gérez les examens avec questions et corrections
+            Créez des quiz interactifs et des exercices avec solutions
           </p>
         </div>
         
-        <Link href="/dashboard/content/exams/new">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Créer un examen
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/dashboard/content/quiz/new?type=exercise">
+            <Button variant="outline">
+              <FileText className="h-4 w-4 mr-2" />
+              Nouvel Exercice
+            </Button>
+          </Link>
+          <Link href="/dashboard/content/quiz/new?type=quiz">
+            <Button>
+              <Brain className="h-4 w-4 mr-2" />
+              Nouveau Quiz
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total examens</CardTitle>
+            <CardTitle className="text-sm font-medium">Total</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{total}</div>
+            <p className="text-xs text-muted-foreground">
+              Quiz & exercices
+            </p>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Baccalauréat</CardTitle>
-            <div className="h-2 w-2 bg-purple-500 rounded-full" />
+            <CardTitle className="text-sm font-medium">Quiz</CardTitle>
+            <Brain className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {exams.filter(e => e.exam_type === 'baccalaureat').length}
-            </div>
+            <div className="text-2xl font-bold">{quizzes.length}</div>
+            <p className="text-xs text-muted-foreground">
+              Interactifs
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Examens scolaires</CardTitle>
-            <div className="h-2 w-2 bg-blue-500 rounded-full" />
+            <CardTitle className="text-sm font-medium">Exercices</CardTitle>
+            <FileText className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {exams.filter(e => e.exam_type === 'school_exam').length}
-            </div>
+            <div className="text-2xl font-bold">{exercises.length}</div>
+            <p className="text-xs text-muted-foreground">
+              Avec solutions
+            </p>
           </CardContent>
         </Card>
 
@@ -177,37 +205,36 @@ export default async function ExamsPage({ searchParams }: ExamsPageProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {exams.filter(e => e.status === 'published').length}
+              {items.filter(item => item.status === 'published').length}
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Brouillons</CardTitle>
-            <div className="h-2 w-2 bg-yellow-500 rounded-full" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {exams.filter(e => e.status === 'draft').length}
-            </div>
+            <p className="text-xs text-muted-foreground">
+              Accessibles
+            </p>
           </CardContent>
         </Card>
       </div>
 
+      {/* Filters */}
+      <QuizExercisesFilters
+        search={search}
+        content_type={content_type}
+        subject_id={subject_id}
+        series_id={series_id}
+        status={status}
+        subjects={filterOptions.subjects}
+        series={filterOptions.series}
+      />
+
       {/* Table */}
       <Card>
-        <CardContent className="p-4">
+        <CardContent className="p-3">
           <Suspense fallback={<div className="p-6">Chargement...</div>}>
-            <ExamsTable
-              exams={exams}
+            <QuizExercisesTableWrapper
+              data={items}
               totalCount={total}
               currentPage={page}
               pageSize={20}
               searchQuery={search}
-              filters={{ subject_id, series_id, exam_type, status }}
-              filterOptions={filterOptions}
-              examTypeLabels={examTypeLabels}
             />
           </Suspense>
         </CardContent>

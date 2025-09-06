@@ -290,7 +290,7 @@ export function ExamEditor({ mode, initialData }: ExamEditorProps) {
     const file = files[0] // Take first file only
     
     try {
-      // Pass the exam ID if available (for existing exams)
+      // Upload the file first
       const { url, filename } = await uploadExamFile(file, initialData?.id)
       
       if (type === 'questions_pdf') {
@@ -308,6 +308,7 @@ export function ExamEditor({ mode, initialData }: ExamEditorProps) {
       }
       
       toast.success('Fichier uploadé avec succès')
+      
     } catch (error) {
       toast.error('Erreur lors de l\'upload du fichier')
     }

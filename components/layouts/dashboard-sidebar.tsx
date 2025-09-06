@@ -75,12 +75,12 @@ const navigationItems: NavItem[] = [
     ]
   },
 
-  {
-    title: 'Analytics',
-    href: '/dashboard/analytics',
-    icon: BarChart3,
-    roles: ['member', 'admin'],
-  },
+  // {
+  //   title: 'Analytics',
+  //   href: '/dashboard/analytics',
+  //   icon: BarChart3,
+  //   roles: ['member', 'admin'],
+  // },
   {
     title: 'Paramètres',
     href: '/dashboard/settings',
@@ -94,12 +94,6 @@ const navigationItems: NavItem[] = [
     icon: Globe,
     roles: ['admin'],
     children: [
-      {
-        title: 'Vue d\'ensemble',
-        href: '/dashboard/admin/overview',
-        icon: BarChart3,
-        roles: ['admin'],
-      },
       {
         title: 'Pays',
         href: '/dashboard/admin/countries',

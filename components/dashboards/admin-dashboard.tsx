@@ -1,205 +1,250 @@
-"use client"
+'use client'
 
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { 
-  Globe, 
   Users, 
   BookOpen, 
-  TrendingUp, 
-  Server,
+  FileText, 
+  Brain,
+  TrendingUp,
   AlertTriangle,
   Shield,
-  BarChart3,
-  UserCheck,
   Settings,
+  Plus,
+  Eye,
+  BarChart3,
+  Crown,
   Activity,
-  MapPin
-} from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+  Clock,
+  CheckCircle,
+  XCircle,
+  Globe,
+  School,
+  Database,
+  UserCheck,
+  GraduationCap
+} from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 interface AdminDashboardProps {
-  adminName: string
+  profile: any
 }
 
-// Mock data - in real app this would come from API
-const globalStats = {
-  totalUsers: 12847,
-  activeCountries: 8,
-  totalCourses: 456,
-  systemHealth: 99.2
+interface DashboardStats {
+  users: {
+    total: number
+    admins: number
+    members: number
+    students: number
+    recent: any[]
+  }
+  content: {
+    courses: number
+    exams: number
+    quizExercises: number
+    published: number
+    drafts: number
+    recent: any[]
+  }
+  activity: {
+    todayLogins: number
+    weeklyActive: number
+    monthlyActive: number
+    recentActivity: any[]
+  }
+  system: {
+    storage: number
+    performance: number
+    uptime: number
+  }
 }
 
-const countryStats = [
-  { 
-    country: "Sénégal", 
-    code: "SN", 
-    users: 4521, 
-    growth: 12.5, 
-    engagement: 84,
-    members: 3,
-    flag: "🇸🇳"
-  },
-  { 
-    country: "Côte d'Ivoire", 
-    code: "CI", 
-    users: 3847, 
-    growth: 8.3, 
-    engagement: 78,
-    members: 2,
-    flag: "🇨🇮"
-  },
-  { 
-    country: "Mali", 
-    code: "ML", 
-    users: 2156, 
-    growth: 15.7, 
-    engagement: 81,
-    members: 2,
-    flag: "🇲🇱"
-  },
-  { 
-    country: "Burkina Faso", 
-    code: "BF", 
-    users: 1843, 
-    growth: 6.2, 
-    engagement: 75,
-    members: 1,
-    flag: "🇧🇫"
-  },
-  { 
-    country: "Niger", 
-    code: "NE", 
-    users: 480, 
-    growth: 22.1, 
-    engagement: 72,
-    members: 1,
-    flag: "🇳🇪"
-  }
-]
+export function AdminDashboard({ profile }: AdminDashboardProps) {
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [loading, setLoading] = useState(true)
 
-const recentActivities = [
-  {
-    id: "1",
-    type: "user_registered",
-    description: "152 nouveaux utilisateurs inscrits",
-    country: "Mali",
-    timestamp: "Il y a 1h",
-    status: "success"
-  },
-  {
-    id: "2",
-    type: "content_flagged", 
-    description: "Cours 'Physique Quantique' signalé pour révision",
-    country: "Sénégal",
-    timestamp: "Il y a 3h",
-    status: "warning"
-  },
-  {
-    id: "3",
-    type: "member_added",
-    description: "Nouveau membre ajouté: Dr. Fatou Sarr",
-    country: "Sénégal", 
-    timestamp: "Il y a 6h",
-    status: "success"
-  },
-  {
-    id: "4",
-    type: "system_update",
-    description: "Mise à jour système déployée avec succès",
-    country: "Global",
-    timestamp: "Il y a 12h", 
-    status: "info"
-  }
-]
+  useEffect(() => {
+    fetchDashboardStats()
+  }, [])
 
-const systemAlerts = [
-  {
-    id: "1",
-    type: "performance",
-    title: "Temps de réponse élevé",
-    description: "Les serveurs en Côte d'Ivoire montrent une latence accrue",
-    severity: "medium",
-    timestamp: "Il y a 2h"
-  },
-  {
-    id: "2",
-    type: "content",
-    title: "Contenu en attente de modération",
-    description: "12 cours nécessitent une révision avant publication",
-    severity: "low",
-    timestamp: "Il y a 4h"
-  },
-  {
-    id: "3", 
-    type: "security",
-    title: "Tentatives de connexion suspectes",
-    description: "Activité inhabituelle détectée depuis plusieurs IP",
-    severity: "high",
-    timestamp: "Il y a 8h"
-  }
-]
+  const fetchDashboardStats = async () => {
+    try {
+      const supabase = createClient()
 
-const topPerformers = [
-  { name: "Aminata Diallo", country: "Sénégal", series: "S2", score: 98.5 },
-  { name: "Ousmane Traoré", country: "Mali", series: "S1", score: 96.2 },
-  { name: "Fatoumata Kane", country: "Burkina Faso", series: "L", score: 95.8 },
-  { name: "Ibrahim Koné", country: "Côte d'Ivoire", series: "S2", score: 94.7 }
-]
+      // Fetch user statistics
+      const [
+        { data: allUsers, count: totalUsers },
+        { data: admins, count: adminCount },
+        { data: members, count: memberCount },
+        { data: students, count: studentCount },
+        { data: recentUsers }
+      ] = await Promise.all([
+        supabase.from('profiles').select('*', { count: 'exact' }),
+        supabase.from('profiles').select('*', { count: 'exact' }).eq('role', 'admin'),
+        supabase.from('profiles').select('*', { count: 'exact' }).eq('role', 'member'),
+        supabase.from('profiles').select('*', { count: 'exact' }).eq('role', 'user'),
+        supabase.from('profiles').select(`
+          id, full_name, email, role, created_at, last_sign_in_at,
+          country:countries(name)
+        `).order('created_at', { ascending: false }).limit(5)
+      ])
 
-export function AdminDashboard({ adminName }: AdminDashboardProps) {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "success": return "text-success bg-success/10"
-      case "warning": return "text-warning bg-warning/10"
-      case "info": return "text-primary bg-primary/10"
-      default: return "text-muted-foreground bg-muted/30"
+      // Fetch content statistics
+      const [
+        { data: courses, count: coursesCount },
+        { data: exams, count: examsCount },
+        { data: quizExercises, count: quizExercisesCount },
+        { data: publishedContent, count: publishedCount },
+        { data: draftContent, count: draftCount },
+        { data: recentContent }
+      ] = await Promise.all([
+        supabase.from('courses').select('*', { count: 'exact' }),
+        supabase.from('exams').select('*', { count: 'exact' }),
+        supabase.from('quiz_exercises').select('*', { count: 'exact' }),
+        supabase.from('courses').select('*', { count: 'exact' }).eq('status', 'publish'),
+        supabase.from('courses').select('*', { count: 'exact' }).eq('status', 'draft'),
+        supabase.from('courses').select(`
+          id, title, status, created_at, updated_at,
+          subject:subjects(name, color),
+          created_by_profile:profiles(full_name)
+        `).order('created_at', { ascending: false }).limit(5)
+      ])
+
+      const dashboardStats: DashboardStats = {
+        users: {
+          total: totalUsers || 0,
+          admins: adminCount || 0,
+          members: memberCount || 0,
+          students: studentCount || 0,
+          recent: recentUsers || []
+        },
+        content: {
+          courses: coursesCount || 0,
+          exams: examsCount || 0,
+          quizExercises: quizExercisesCount || 0,
+          published: publishedCount || 0,
+          drafts: draftCount || 0,
+          recent: recentContent || []
+        },
+        activity: {
+          todayLogins: 0,
+          weeklyActive: 0,
+          monthlyActive: 0,
+          recentActivity: []
+        },
+        system: {
+          storage: 0,
+          performance: 0,
+          uptime: 0
+        }
+      }
+
+      setStats(dashboardStats)
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error)
+    } finally {
+      setLoading(false)
     }
   }
 
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case "high": return "text-destructive bg-destructive/10 border-destructive/20"
-      case "medium": return "text-warning bg-warning/10 border-warning/20"
-      default: return "text-muted-foreground bg-muted/10 border-muted/20"
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    })
+  }
+
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case 'admin': return Crown
+      case 'member': return UserCheck  
+      case 'user': return GraduationCap
+      default: return Users
     }
+  }
+
+  const getRoleBadgeColor = (role: string) => {
+    switch (role) {
+      case 'admin': return 'bg-red-100 text-red-800'
+      case 'member': return 'bg-orange-100 text-orange-800'
+      case 'user': return 'bg-blue-100 text-blue-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Tableau de bord administrateur</h1>
+            <p className="text-muted-foreground">Chargement des données...</p>
+          </div>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <div className="animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-6 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (!stats) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Tableau de bord administrateur</h1>
+            <p className="text-muted-foreground">Erreur lors du chargement des données</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Header */}
+    <div className="space-y-6 p-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-            <Shield className="h-8 w-8 text-primary" />
-            Administration Globale
-          </h1>
-          <p className="text-muted-foreground">
-            Bonjour {adminName}, voici l'état de la plateforme Afribac
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-red-100 rounded-lg">
+            <Crown className="h-6 w-6 text-red-600" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold">
+              Bienvenue, {profile.full_name} 👋
+            </h1>
+            <p className="text-muted-foreground">
+              Tableau de bord administrateur - Vue d'ensemble complète
+            </p>
+          </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <Settings className="h-4 w-4 mr-2" />
-            Paramètres
-          </Button>
-          <Button size="sm">
-            <Activity className="h-4 w-4 mr-2" />
-            Monitoring
-          </Button>
+          <Link href="/dashboard/settings">
+            <Button variant="outline" size="sm">
+              <Settings className="h-4 w-4 mr-2" />
+              Paramètres
+            </Button>
+          </Link>
         </div>
       </div>
 
-      {/* Global Stats */}
+      {/* Key Metrics */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -207,259 +252,299 @@ export function AdminDashboard({ adminName }: AdminDashboardProps) {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{globalStats.totalUsers.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              +573 ce mois-ci
-            </p>
+            <div className="text-2xl font-bold">{stats.users.total}</div>
+            <div className="flex gap-2 text-xs text-muted-foreground mt-2">
+              <span>{stats.users.students} étudiants</span>
+              <span>•</span>
+              <span>{stats.users.members} collaborateurs</span>
+              <span>•</span>
+              <span>{stats.users.admins} admins</span>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pays actifs</CardTitle>
-            <Globe className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{globalStats.activeCountries}</div>
-            <p className="text-xs text-muted-foreground">
-              Afrique de l'Ouest
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Cours total</CardTitle>
+            <CardTitle className="text-sm font-medium">Contenu total</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{globalStats.totalCourses}</div>
-            <p className="text-xs text-muted-foreground">
-              Toutes matières confondues
-            </p>
+            <div className="text-2xl font-bold">
+              {stats.content.courses + stats.content.exams + stats.content.quizExercises}
+            </div>
+            <div className="flex gap-2 text-xs text-muted-foreground mt-2">
+              <span>{stats.content.courses} cours</span>
+              <span>•</span>
+              <span>{stats.content.exams} examens</span>
+              <span>•</span>
+              <span>{stats.content.quizExercises} quiz</span>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Santé système</CardTitle>
-            <Server className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Contenu publié</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-success">{globalStats.systemHealth}%</div>
-            <Progress value={globalStats.systemHealth} className="mt-2" />
+            <div className="text-2xl font-bold">{stats.content.published}</div>
+            <div className="flex gap-2 text-xs text-muted-foreground mt-2">
+              <span>{stats.content.drafts} en attente</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Utilisateurs actifs</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.users.total}</div>
+            <div className="flex gap-2 text-xs text-muted-foreground mt-2">
+              <span>Total inscrits</span>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
-          {/* Country Performance */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5" />
-                Performance par pays
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Pays</TableHead>
-                    <TableHead>Utilisateurs</TableHead>
-                    <TableHead>Croissance</TableHead>
-                    <TableHead>Engagement</TableHead>
-                    <TableHead>Members</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {countryStats.map(stat => (
-                    <TableRow key={stat.code}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">{stat.flag}</span>
-                          {stat.country}
-                        </div>
-                      </TableCell>
-                      <TableCell>{stat.users.toLocaleString()}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <TrendingUp className="h-3 w-3 text-success" />
-                          <span className="text-success">+{stat.growth}%</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Progress value={stat.engagement} className="w-16" />
-                          <span className="text-sm">{stat.engagement}%</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{stat.members}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="sm">
-                          <MapPin className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-
-          {/* Top Performers */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Top performers globaux
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {topPerformers.map((performer, index) => (
-                  <div key={performer.name} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-4">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-sm font-bold text-primary">#{index + 1}</span>
-                      </div>
-                      <div>
-                        <h4 className="font-medium">{performer.name}</h4>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span>{performer.country}</span>
-                          <Badge variant="outline" className="text-xs">
-                            Série {performer.series}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg font-bold text-success">{performer.score}%</div>
-                      <p className="text-xs text-muted-foreground">Score moyen</p>
-                    </div>
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Plus className="h-5 w-5" />
+            Actions rapides
+          </CardTitle>
+          <CardDescription>
+            Raccourcis vers les fonctionnalités les plus utilisées
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Link href="/dashboard/admin/users">
+              <Button variant="outline" className="w-full justify-start h-auto p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 rounded">
+                    <Users className="h-4 w-4 text-blue-600" />
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* System Alerts */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4" />
-                Alertes système
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {systemAlerts.map(alert => (
-                  <div key={alert.id} className={`p-3 border rounded-lg ${getSeverityColor(alert.severity)}`}>
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-medium">{alert.title}</h4>
-                      <p className="text-xs leading-tight">{alert.description}</p>
-                      <div className="flex justify-between items-center">
-                        <Badge variant="outline" className="text-xs">
-                          {alert.type}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {alert.timestamp}
-                        </span>
-                      </div>
-                    </div>
+                  <div className="text-left">
+                    <div className="font-medium">Gérer utilisateurs</div>
+                    <div className="text-xs text-muted-foreground">Modérer et administrer</div>
                   </div>
-                ))}
-                <Button variant="ghost" size="sm" className="w-full">
-                  Voir toutes les alertes
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                </div>
+              </Button>
+            </Link>
 
-          {/* Recent Activity */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Activité récente</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {recentActivities.map(activity => (
-                  <div key={activity.id} className="flex gap-3">
-                    <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${getStatusColor(activity.status)}`}></div>
-                    <div className="space-y-1 min-w-0">
-                      <p className="text-sm leading-tight">{activity.description}</p>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs">
-                          {activity.country}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {activity.timestamp}
-                        </span>
-                      </div>
-                    </div>
+            <Link href="/dashboard/admin/countries">
+              <Button variant="outline" className="w-full justify-start h-auto p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-100 rounded">
+                    <Globe className="h-4 w-4 text-green-600" />
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  <div className="text-left">
+                    <div className="font-medium">Gérer pays</div>
+                    <div className="text-xs text-muted-foreground">Configuration système</div>
+                  </div>
+                </div>
+              </Button>
+            </Link>
 
-          {/* Quick Stats */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Statistiques rapides</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Membres actifs</span>
-                <span className="text-sm font-medium">12</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Cours en attente</span>
-                <span className="text-sm font-medium text-warning">8</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Rapports non lus</span>
-                <span className="text-sm font-medium text-destructive">3</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Uptime serveur</span>
-                <span className="text-sm font-medium text-success">99.9%</span>
-              </div>
-            </CardContent>
-          </Card>
+            <Link href="/dashboard/admin/series">
+              <Button variant="outline" className="w-full justify-start h-auto p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-100 rounded">
+                    <School className="h-4 w-4 text-purple-600" />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-medium">Gérer séries</div>
+                    <div className="text-xs text-muted-foreground">Filières et programmes</div>
+                  </div>
+                </div>
+              </Button>
+            </Link>
 
-          {/* Admin Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Actions admin</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button variant="outline" size="sm" className="w-full justify-start">
-                <UserCheck className="h-4 w-4 mr-2" />
-                Gérer les membres
+            <Link href="/dashboard/admin/subjects">
+              <Button variant="outline" className="w-full justify-start h-auto p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-orange-100 rounded">
+                    <BookOpen className="h-4 w-4 text-orange-600" />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-medium">Gérer matières</div>
+                    <div className="text-xs text-muted-foreground">Disciplines académiques</div>
+                  </div>
+                </div>
               </Button>
-              <Button variant="outline" size="sm" className="w-full justify-start">
-                <Globe className="h-4 w-4 mr-2" />
-                Configurer les pays
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Recent Users */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Nouveaux utilisateurs</CardTitle>
+              <CardDescription>Les 5 derniers inscrits</CardDescription>
+            </div>
+            <Link href="/dashboard/admin/users">
+              <Button variant="ghost" size="sm">
+                <Eye className="h-4 w-4 mr-2" />
+                Voir tout
               </Button>
-              <Button variant="outline" size="sm" className="w-full justify-start">
-                <BookOpen className="h-4 w-4 mr-2" />
-                Modération contenu
+            </Link>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {stats.users.recent.map((user) => {
+                const RoleIcon = getRoleIcon(user.role)
+                return (
+                  <div key={user.id} className="flex items-center gap-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback>
+                        {user.full_name?.charAt(0) || user.email.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {user.full_name || user.email}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {user.country?.name || 'Pays non défini'} • {formatDate(user.created_at)}
+                      </p>
+                    </div>
+                    <Badge className={`text-xs ${getRoleBadgeColor(user.role)}`} variant="secondary">
+                      <RoleIcon className="h-3 w-3 mr-1" />
+                      {user.role}
+                    </Badge>
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Recent Content */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Contenu récent</CardTitle>
+              <CardDescription>Dernières créations</CardDescription>
+            </div>
+            <Link href="/dashboard/content/courses">
+              <Button variant="ghost" size="sm">
+                <Eye className="h-4 w-4 mr-2" />
+                Voir tout
               </Button>
-              <Button variant="outline" size="sm" className="w-full justify-start">
-                <BarChart3 className="h-4 w-4 mr-2" />
-                Rapports globaux
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+            </Link>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {stats.content.recent.map((content) => (
+                <div key={content.id} className="flex items-center gap-3">
+                  <div 
+                    className="w-3 h-3 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: content.subject?.color || '#3B82F6' }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{content.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      par {content.created_by_profile?.full_name || 'Anonyme'} • {formatDate(content.created_at)}
+                    </p>
+                  </div>
+                  <Badge 
+                    variant={content.status === 'publish' ? 'default' : 'secondary'}
+                    className="text-xs"
+                  >
+                    {content.status === 'publish' ? 'Publié' : 'Brouillon'}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* System Status */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Database className="h-5 w-5" />
+              État de la plateforme
+            </CardTitle>
+            <CardDescription>Surveillance des services</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-500" />
+                <span className="text-sm">Base de données</span>
+              </div>
+              <Badge className="bg-green-100 text-green-800 text-xs">Opérationnelle</Badge>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-500" />
+                <span className="text-sm">Authentification</span>
+              </div>
+              <Badge className="bg-green-100 text-green-800 text-xs">Opérationnelle</Badge>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-500" />
+                <span className="text-sm">Stockage fichiers</span>
+              </div>
+              <Badge className="bg-green-100 text-green-800 text-xs">Opérationnelle</Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Content Statistics */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Statistiques du contenu</CardTitle>
+            <CardDescription>Répartition par type et statut</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-blue-500" />
+                <span className="text-sm">Cours</span>
+              </div>
+              <span className="font-medium">{stats.content.courses}</span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-green-500" />
+                <span className="text-sm">Examens</span>
+              </div>
+              <span className="font-medium">{stats.content.exams}</span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Brain className="h-4 w-4 text-purple-500" />
+                <span className="text-sm">Quiz & Exercices</span>
+              </div>
+              <span className="font-medium">{stats.content.quizExercises}</span>
+            </div>
+
+            <div className="pt-2 border-t space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Publiés</span>
+                <span className="text-green-600 font-medium">{stats.content.published}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Brouillons</span>
+                <span className="text-orange-600 font-medium">{stats.content.drafts}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

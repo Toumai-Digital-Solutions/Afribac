@@ -14,11 +14,11 @@ export async function middleware(request: NextRequest) {
   }
 
   // If user is authenticated and on root, redirect to dashboard  
-  if (user && pathname === '/') {
-    const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
-    return Response.redirect(url)
-  }
+//   if (user && pathname === '/') {
+//     const url = request.nextUrl.clone()
+//     url.pathname = '/dashboard'
+//     return Response.redirect(url)
+//   }
 
   // If user is not authenticated and trying to access protected routes
   const protectedRoutes = ['/dashboard', '/admin', '/member', '/student']

@@ -91,7 +91,7 @@ export default async function SettingsPage() {
 
   // Common settings component
   const GeneralSettings = () => (
-    <div className="space-y-6">
+    <div className="space-y-6 ">
      
       <Card>
         <CardHeader>
@@ -147,7 +147,7 @@ export default async function SettingsPage() {
             
             <div className="flex items-center justify-between">
               <div>
-                <Label>Notifications de nouveau contenu</Label>
+                <Label>Notifications de nouveau cours</Label>
                 <p className="text-sm text-muted-foreground">
                   Soyez notifié des nouveaux cours et examens
                 </p>
@@ -626,7 +626,7 @@ export default async function SettingsPage() {
       </div>
 
       <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className={`grid w-full ${profile.role === 'admin' ? 'grid-cols-3' : 'grid-cols-2'}`}>
           <TabsTrigger value="general" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             Général
@@ -647,16 +647,18 @@ export default async function SettingsPage() {
           )}
           
           {profile.role === 'admin' && (
-            <TabsTrigger value="admin" className="flex items-center gap-2">
-              <Crown className="h-4 w-4" />
-              Administration
-            </TabsTrigger>
+            <>
+              <TabsTrigger value="admin" className="flex items-center gap-2">
+                <Crown className="h-4 w-4" />
+                Administration
+              </TabsTrigger>
+              
+              <TabsTrigger value="advanced" className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Avancé
+              </TabsTrigger>
+            </>
           )}
-          
-          <TabsTrigger value="advanced" className="flex items-center gap-2">
-            <Shield className="h-4 w-4" />
-            Avancé
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">
@@ -681,56 +683,58 @@ export default async function SettingsPage() {
           </TabsContent>
         )}
 
-        <TabsContent value="advanced">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5" />
-                Paramètres avancés
-              </CardTitle>
-              <CardDescription>
-                Configuration technique et options avancées
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Mode développeur</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Activer les outils de débogage et les logs détaillés
-                    </p>
+        {profile.role === 'admin' && (
+          <TabsContent value="advanced">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Paramètres avancés
+                </CardTitle>
+                <CardDescription>
+                  Configuration technique et options avancées
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Mode développeur</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Activer les outils de débogage et les logs détaillés
+                      </p>
+                    </div>
+                    <Switch />
                   </div>
-                  <Switch />
-                </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Données de télémétrie</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Partager des données d'usage anonymes pour améliorer la plateforme
-                    </p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Données de télémétrie</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Partager des données d'usage anonymes pour améliorer la plateforme
+                      </p>
+                    </div>
+                    <Switch defaultChecked />
                   </div>
-                  <Switch defaultChecked />
-                </div>
 
-                <Separator />
+                  <Separator />
 
-                <div className="space-y-3">
-                  <Button variant="outline" className="w-full">
-                    Exporter mes données
-                  </Button>
-                  <Button variant="outline" className="w-full">
-                    Vider le cache
-                  </Button>
-                  <Button variant="destructive" className="w-full">
-                    Supprimer mon compte
-                  </Button>
+                  <div className="space-y-3">
+                    <Button variant="outline" className="w-full">
+                      Exporter mes données
+                    </Button>
+                    <Button variant="outline" className="w-full">
+                      Vider le cache
+                    </Button>
+                    <Button variant="destructive" className="w-full">
+                      Supprimer mon compte
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   )

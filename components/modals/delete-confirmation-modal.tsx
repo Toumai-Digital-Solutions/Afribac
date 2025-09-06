@@ -22,7 +22,7 @@ import { Trash2, AlertTriangle, Type } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface DeleteConfirmationModalProps {
-  resourceType: 'country' | 'series' | 'subject' | 'user' | 'exam'
+  resourceType: 'country' | 'series' | 'subject' | 'user' | 'exam' | 'course' | 'quiz_exercise'
   resourceName: string
   resourceId: string
   trigger?: React.ReactNode
@@ -77,6 +77,20 @@ const resourceConfig: Record<string, {
     table: 'exams',
     dependencies: ['exam_attempts'],
     warningMessage: 'Attention : Supprimer cet examen supprimera toutes les tentatives des étudiants associées.'
+  },
+  course: {
+    singular: 'cours',
+    plural: 'cours',
+    table: 'courses',
+    dependencies: ['course_series', 'course_tags', 'user_progress'],
+    warningMessage: 'Attention : Supprimer ce cours supprimera toutes les associations et progrès des étudiants.'
+  },
+  quiz_exercise: {
+    singular: 'quiz/exercice',
+    plural: 'quiz/exercices',
+    table: 'quiz_exercises',
+    dependencies: ['questions', 'quiz_attempts', 'quiz_exercise_tags'],
+    warningMessage: 'Attention : Supprimer cet élément supprimera toutes les questions et tentatives associées.'
   }
 }
 

@@ -229,12 +229,9 @@ const columns: ColumnDef<Course>[] = [
           </Link>
         )}
         <DeleteConfirmationModal
-          title="Supprimer le cours"
-          description="Êtes-vous sûr de vouloir supprimer ce cours ? Cette action est irréversible."
-          onConfirm={() => {
-            // TODO: Implement delete functionality
-            console.log('Delete course:', row.original.id)
-          }}
+          resourceType="course"
+          resourceName={row.original.title}
+          resourceId={row.original.id}
           trigger={
             <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50">
               <Trash2 className="h-4 w-4" />
@@ -270,18 +267,57 @@ export function CoursesTable({
   searchQuery = '',
   filters = {},
 }: CoursesTableProps) {
+  const handlePageChange = (page: number) => {
+    onPageChange(page)
+  }
+
   return (
-    <DataTable
-      columns={columns}
-      data={courses}
-      searchKey="title"
-      searchPlaceholder="Rechercher des cours..."
-      totalCount={totalCount}
-      currentPage={currentPage}
-      pageSize={pageSize}
-      onPageChange={onPageChange}
-      onSearch={onSearch}
-      searchQuery={searchQuery}
-    />
+    <div className="space-y-4">
+      <DataTable
+        columns={columns}
+        data={courses}
+        searchable={false}
+        filterable={false}
+        loading={false}
+        pageSize={courses.length} // Show all current data since we handle pagination server-side
+      />
+      
+      {/* Custom Pagination */}
+      {totalCount > pageSize && (
+        <div className="flex items-center justify-between px-2 py-4">
+          <div className="text-sm text-muted-foreground">
+            Affichage de {Math.min((currentPage - 1) * pageSize + 1, totalCount)} à{' '}
+            {Math.min(currentPage * pageSize, totalCount)} sur {totalCount} cours
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+              disabled={currentPage <= 1}
+            >
+              Précédent
+            </Button>
+            
+            <div className="flex items-center space-x-1">
+              <span className="text-sm text-muted-foreground">Page</span>
+              <span className="text-sm font-medium">{currentPage}</span>
+              <span className="text-sm text-muted-foreground">sur</span>
+              <span className="text-sm font-medium">{Math.ceil(totalCount / pageSize)}</span>
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage >= Math.ceil(totalCount / pageSize)}
+            >
+              Suivant
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }

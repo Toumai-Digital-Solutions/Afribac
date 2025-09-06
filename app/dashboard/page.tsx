@@ -1,5 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { AdminDashboard } from '@/components/dashboards/admin-dashboard'
+import { MemberDashboard } from '@/components/dashboards/member-dashboard'
+import { StudentDashboard } from '@/components/dashboards/student-dashboard'
 
 export default async function DashboardRedirect() {
   const supabase = await createClient()
@@ -28,68 +31,31 @@ export default async function DashboardRedirect() {
     redirect('/auth/signin')
   }
 
-  // For now, we'll show a unified dashboard overview
-  // In the future, this can show role-specific content or redirect to specific sections
+  // Render role-specific dashboard
+  if (profile.role === 'admin') {
+    return <AdminDashboard profile={profile} />
+  }
   
+  if (profile.role === 'member') {
+    return <MemberDashboard profile={profile} />
+  }
+  
+  if (profile.role === 'user') {
+    return <StudentDashboard profile={profile} />
+  }
+
+  // Fallback for unknown roles
   return (
     <div className="space-y-6">
-      {/* Welcome Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">
             Bienvenue, {profile.full_name || 'Utilisateur'} 👋
           </h1>
           <p className="text-muted-foreground">
-            {profile.role === 'admin' && 'Panneau d\'administration - Gestion globale'}
-            {profile.role === 'member' && `Espace collaborateur - ${profile.country?.name}`}
-            {profile.role === 'user' && `Espace étudiant - ${profile.series?.name || 'Apprentissage'}`}
+            Tableau de bord
           </p>
         </div>
-      </div>
-
-      {/* Role-specific quick actions or overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {profile.role === 'admin' && (
-          <>
-            <div className="p-6 border rounded-lg">
-              <h3 className="font-semibold mb-2">Gestion globale</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Administrez tous les utilisateurs et contenus
-              </p>
-              <a href="/dashboard/admin" className="text-sm text-primary hover:underline">
-                Accéder →
-              </a>
-            </div>
-          </>
-        )}
-        
-        {profile.role === 'member' && (
-          <>
-            <div className="p-6 border rounded-lg">
-              <h3 className="font-semibold mb-2">Mes contenus</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Créez et gérez vos cours
-              </p>
-              <a href="/dashboard/content" className="text-sm text-primary hover:underline">
-                Accéder →
-              </a>
-            </div>
-          </>
-        )}
-        
-        {profile.role === 'user' && (
-          <>
-            <div className="p-6 border rounded-lg">
-              <h3 className="font-semibold mb-2">Mes cours</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Continuez votre apprentissage
-              </p>
-              <a href="/dashboard/learn" className="text-sm text-primary hover:underline">
-                Accéder →
-              </a>
-            </div>
-          </>
-        )}
       </div>
     </div>
   )

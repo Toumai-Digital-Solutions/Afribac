@@ -438,6 +438,201 @@ export interface Database {
           updated_at?: string
         }
       }
+      quiz_exercises: {
+        Row: {
+          id: string
+          title: string
+          description: string | null
+          content_type: 'quiz' | 'exercise'
+          subject_id: string
+          series_id: string
+          course_id: string | null
+          difficulty_level: number
+          estimated_duration: number
+          instructions: string | null
+          status: 'draft' | 'published' | 'archived'
+          view_count: number
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          description?: string | null
+          content_type: 'quiz' | 'exercise'
+          subject_id: string
+          series_id: string
+          course_id?: string | null
+          difficulty_level?: number
+          estimated_duration?: number
+          instructions?: string | null
+          status?: 'draft' | 'published' | 'archived'
+          view_count?: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          description?: string | null
+          content_type?: 'quiz' | 'exercise'
+          subject_id?: string
+          series_id?: string
+          course_id?: string | null
+          difficulty_level?: number
+          estimated_duration?: number
+          instructions?: string | null
+          status?: 'draft' | 'published' | 'archived'
+          view_count?: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      questions: {
+        Row: {
+          id: string
+          quiz_exercise_id: string
+          question_text: string
+          question_type: 'single_choice' | 'multiple_choice' | 'true_false' | 'short_answer'
+          points: number
+          explanation: string | null
+          order_index: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          quiz_exercise_id: string
+          question_text: string
+          question_type: 'single_choice' | 'multiple_choice' | 'true_false' | 'short_answer'
+          points?: number
+          explanation?: string | null
+          order_index: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          quiz_exercise_id?: string
+          question_text?: string
+          question_type?: 'single_choice' | 'multiple_choice' | 'true_false' | 'short_answer'
+          points?: number
+          explanation?: string | null
+          order_index?: number
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      answer_options: {
+        Row: {
+          id: string
+          question_id: string
+          option_text: string
+          is_correct: boolean
+          order_index: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          question_id: string
+          option_text: string
+          is_correct?: boolean
+          order_index: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          question_id?: string
+          option_text?: string
+          is_correct?: boolean
+          order_index?: number
+          created_at?: string
+        }
+      }
+      quiz_attempts: {
+        Row: {
+          id: string
+          quiz_exercise_id: string
+          user_id: string
+          score: number
+          max_score: number
+          completed_at: string
+          time_taken: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          quiz_exercise_id: string
+          user_id: string
+          score?: number
+          max_score: number
+          completed_at?: string
+          time_taken?: number | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          quiz_exercise_id?: string
+          user_id?: string
+          score?: number
+          max_score?: number
+          completed_at?: string
+          time_taken?: number | null
+          created_at?: string
+        }
+      }
+      user_answers: {
+        Row: {
+          id: string
+          quiz_attempt_id: string
+          question_id: string
+          selected_options: string[] | null
+          text_answer: string | null
+          is_correct: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          quiz_attempt_id: string
+          question_id: string
+          selected_options?: string[] | null
+          text_answer?: string | null
+          is_correct?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          quiz_attempt_id?: string
+          question_id?: string
+          selected_options?: string[] | null
+          text_answer?: string | null
+          is_correct?: boolean
+          created_at?: string
+        }
+      }
+      quiz_exercise_tags: {
+        Row: {
+          id: string
+          quiz_exercise_id: string
+          tag_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          quiz_exercise_id: string
+          tag_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          quiz_exercise_id?: string
+          tag_id?: string
+          created_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
@@ -493,4 +688,20 @@ export type ExamWithDetails = Exam & {
 export type ProfileWithDetails = Profile & {
   country: Country
   series: Series | null
+}
+
+export type QuizExercise = Database['public']['Tables']['quiz_exercises']['Row']
+export type Question = Database['public']['Tables']['questions']['Row']
+export type AnswerOption = Database['public']['Tables']['answer_options']['Row']
+export type QuizAttempt = Database['public']['Tables']['quiz_attempts']['Row']
+export type UserAnswer = Database['public']['Tables']['user_answers']['Row']
+export type QuizExerciseTag = Database['public']['Tables']['quiz_exercise_tags']['Row']
+
+export type QuizExerciseWithDetails = QuizExercise & {
+  subject: Subject
+  series: Series & { country: Country }
+  course?: Course | null
+  questions: (Question & { answer_options: AnswerOption[] })[]
+  tags: Tag[]
+  created_by_profile: Profile | null
 }

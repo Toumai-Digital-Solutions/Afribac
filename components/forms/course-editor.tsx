@@ -241,11 +241,62 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
     }
   }
 
-  const handleFileUpload = (url: string, filename: string, type: 'pdf' | 'video') => {
-    if (type === 'pdf') {
-      setFormData(prev => ({ ...prev, pdf_url: url, pdf_filename: filename }))
-    } else {
-      setFormData(prev => ({ ...prev, video_url: url }))
+  // Upload files to Supabase storage
+  const uploadCourseFile = async (file: File, folder: string) => {
+    try {
+      const supabase = createClient()
+      
+      // Get subject name for folder structure  
+      const subject = subjects.find(s => s.id === formData.subject_id)
+      const subjectSlug = subject?.name.toLowerCase().replace(/[^a-z0-9]/g, '-') || 'unknown'
+      
+      // Use existing course ID or generate a temporary one for new courses
+      const courseIdForFolder = initialData?.id || `temp-${Date.now()}`
+      
+      // Create file path: /courses/subject-name-course-id/filename
+      const fileExtension = file.name.split('.').pop()
+      const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
+      const filePath = `courses/${subjectSlug}-${courseIdForFolder}/${fileName}`
+      
+      // Upload to course-materials bucket
+      const { data, error: uploadError } = await supabase.storage
+        .from('course-materials')
+        .upload(filePath, file, {
+          contentType: file.type,
+          upsert: false
+        })
+      
+      if (uploadError) throw uploadError
+      
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('course-materials')
+        .getPublicUrl(filePath)
+      
+      return { url: publicUrl, filename: file.name }
+    } catch (error) {
+      console.error('File upload error:', error)
+      throw error
+    }
+  }
+
+  const handleFileUpload = async (files: File[]) => {
+    if (files.length === 0) return
+    
+    const file = files[0] // Take first file only
+    
+    try {
+      const { url, filename } = await uploadCourseFile(file, 'pdfs')
+      
+      setFormData(prev => ({ 
+        ...prev, 
+        pdf_url: url, 
+        pdf_filename: filename 
+      }))
+      
+      toast.success('Fichier uploadé avec succès')
+    } catch (error) {
+      toast.error('Erreur lors de l\'upload du fichier')
     }
   }
 
@@ -384,9 +435,9 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
                 <span className='h-2'></span>
                 <FileUpload
                   accept=".pdf"
-                  onUpload={(url, filename) => handleFileUpload(url, filename, 'pdf')}
-                  bucket="course-materials"
-                  folder="pdfs"
+                  maxFiles={1}
+                  maxSize={20}
+                  onUpload={handleFileUpload}
                 />
                 {formData.pdf_filename && (
                   <div className="mt-2">
