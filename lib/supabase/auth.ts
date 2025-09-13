@@ -1,15 +1,16 @@
 import { createClient } from '../supabase'
-import { upsertProfile } from '../database'
 import type { AuthError, User } from '@supabase/supabase-js'
 import type { UserRole } from '@/types/database'
 
 export interface SignUpData {
   email: string
   password: string
-  full_name: string
-  country_id: string
-  series_id?: string // Required for students, optional for members/admins
-  role?: UserRole
+  metadata?: {
+    full_name?: string
+    country_id?: string
+    series_id?: string
+    role?: UserRole
+  }
 }
 
 export interface SignInData {
@@ -18,18 +19,16 @@ export interface SignInData {
 }
 
 // Sign up with email and password + profile creation
-export const signUp = async ({ email, password, full_name, country_id, series_id, role = 'user' }: SignUpData) => {
+export const signUp = async ({ email, password, metadata }: SignUpData) => {
   const supabase = createClient()
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: {
-        full_name,
-        country_id,
-        series_id,
-        role
-      }
+      data: metadata,
+      emailRedirectTo: typeof window !== 'undefined'
+        ? `${window.location.origin}/auth/callback?next=${encodeURIComponent('/auth/onboarding')}`
+        : undefined
     }
   })
 
@@ -80,12 +79,15 @@ export const updateProfile = async (updates: { [key: string]: any }) => {
 }
 
 // Sign in with OAuth provider
-export const signInWithProvider = async (provider: 'google' | 'github' | 'facebook' | 'twitter') => {
+export const signInWithProvider = async (
+  provider: 'google' | 'apple' | 'facebook',
+  next: string = '/dashboard'
+) => {
   const supabase = createClient()
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
-      redirectTo: `${window.location.origin}/auth/callback`
+      redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`
     }
   })
   return { data, error }

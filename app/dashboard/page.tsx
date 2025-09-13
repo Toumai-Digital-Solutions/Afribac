@@ -31,6 +31,14 @@ export default async function DashboardRedirect() {
     redirect('/auth/signin')
   }
 
+  // If profile incomplete, route to the appropriate onboarding step
+  if (!profile.full_name) {
+    redirect('/auth/onboarding/name')
+  }
+  if (!profile.country_id || (profile.role === 'user' && !profile.series_id)) {
+    redirect('/auth/onboarding/location')
+  }
+
   // Render role-specific dashboard
   if (profile.role === 'admin') {
     return <AdminDashboard profile={profile} />

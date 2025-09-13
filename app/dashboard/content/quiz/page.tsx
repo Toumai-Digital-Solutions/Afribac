@@ -221,8 +221,8 @@ export default async function QuizPage({ searchParams }: QuizPageProps) {
         subject_id={subject_id}
         series_id={series_id}
         status={status}
-        subjects={filterOptions.subjects}
-        series={filterOptions.series}
+        subjects={filterOptions.subjects as any}
+        series={filterOptions.series as any}
       />
 
       {/* Table */}

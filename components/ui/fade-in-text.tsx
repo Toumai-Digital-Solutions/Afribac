@@ -51,7 +51,7 @@ export function FadeInText({ text, className, delay = 0 }: FadeInTextProps) {
     >
       {words.map((word, index) => (
         <motion.span
-          variants={child}
+          variants={child as any}
           key={index}
           className="inline-block"
         >
@@ -112,7 +112,7 @@ export function AnimatedText({ words, className }: AnimatedTextProps) {
     >
       {words.map((word, index) => (
         <motion.span
-          variants={child}
+          variants={child as any}
           key={index}
           className={cn(
             "inline-block text-lg sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold",

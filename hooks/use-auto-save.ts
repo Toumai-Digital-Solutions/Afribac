@@ -27,8 +27,8 @@ export function useAutoSave({
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   
-  const timeoutRef = useRef<NodeJS.Timeout>()
-  const lastDataRef = useRef<string>()
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const lastDataRef = useRef<string | null>(null)
   const isInitialRender = useRef(true)
 
   const save = useCallback(async () => {

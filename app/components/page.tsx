@@ -390,7 +390,7 @@ export default function ComponentsPage() {
             )}
 
             {/* Dashboards Section */}
-            {activeSection === "dashboards" && (
+            {/* {activeSection === "dashboards" && (
               <ComponentSection 
                 title="Dashboards" 
                 description="Role-specific dashboards for students, members, and admins."
@@ -416,8 +416,8 @@ export default function ComponentsPage() {
                     adminName="Moussa Konaté"
                   />
                 </ComponentDemo>
-              </ComponentSection>
-            )}
+              </ComponentSection> 
+           )} */}
 
             {/* Charts & Analytics Section */}
             {activeSection === "charts" && (

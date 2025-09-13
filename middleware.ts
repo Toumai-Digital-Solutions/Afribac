@@ -5,9 +5,19 @@ export async function middleware(request: NextRequest) {
   const { supabaseResponse, user } = await updateSession(request)
   
   const pathname = request.nextUrl.pathname
+  const code = request.nextUrl.searchParams.get('code')
+
+  // If Supabase sends a root URL with ?code=..., forward to our callback with onboarding as next
+  if (code && pathname !== '/auth/callback') {
+    const url = request.nextUrl.clone()
+    url.pathname = '/auth/callback'
+    url.searchParams.set('code', code)
+    if (!url.searchParams.get('next')) url.searchParams.set('next', '/auth/onboarding')
+    return Response.redirect(url)
+  }
 
   // If user is authenticated and on auth pages (except callback), redirect to dashboard
-  if (user && pathname.startsWith('/auth') && pathname !== '/auth/callback') {
+  if (user && pathname.startsWith('/auth') && pathname !== '/auth/callback' && !pathname.startsWith('/auth/onboarding')) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     return Response.redirect(url)

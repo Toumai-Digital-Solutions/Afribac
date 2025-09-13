@@ -45,7 +45,7 @@ export function AuthForm() {
     setError('')
     setMessage('')
 
-    const { error } = await signInWithProvider(provider)
+    const { error } = await signInWithProvider(provider as 'google' | 'facebook' | 'apple')
 
     if (error) {
       setError(error.message)
