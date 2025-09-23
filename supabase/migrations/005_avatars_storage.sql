@@ -1,6 +1,7 @@
 -- Create storage bucket for user avatars
 INSERT INTO storage.buckets (id, name, public)
-VALUES ('avatars', 'avatars', true);
+VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO NOTHING;
 
 -- RLS policies for avatars bucket
 
@@ -72,7 +73,18 @@ CREATE POLICY "Users can delete avatars" ON storage.objects
   );
 
 -- Create RLS policy for the storage.buckets table to allow reading the bucket configuration
--- (This might already exist, but we ensure it's there)
-CREATE POLICY IF NOT EXISTS "Users can read buckets" ON storage.buckets
-  FOR SELECT TO authenticated
-  USING (true);
+-- (This might already exist, so guard with a conditional block)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'storage'
+      AND tablename = 'buckets'
+      AND policyname = 'Users can read buckets'
+  ) THEN
+    CREATE POLICY "Users can read buckets" ON storage.buckets
+      FOR SELECT TO authenticated
+      USING (true);
+  END IF;
+END $$;

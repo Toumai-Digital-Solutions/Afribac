@@ -22,14 +22,10 @@ async function getCourses(filters: {
 }) {
   const supabase = await createClient()
   
-  // Use the courses table with joins (fallback while migration is pending)
+  // Use enriched view that already aggregates relationships for filtering
   let query = supabase
-    .from('courses')
-    .select(`
-      *,
-      subject:subjects(name, color, icon),
-      created_by_profile:profiles(full_name)
-    `, { count: 'exact' })
+    .from('searchable_courses')
+    .select('*', { count: 'exact' })
 
   // Apply filters
   if (filters.search) {
@@ -44,16 +40,12 @@ async function getCourses(filters: {
     query = query.eq('status', filters.status)
   }
 
-  // For now, skip country and series filters until migration is applied
-  // TODO: Implement these filters after applying the course_series migration
   if (filters.country_id) {
-    // This will be re-enabled after migration
-    console.log('Country filter temporarily disabled')
+    query = query.contains('country_ids', [filters.country_id])
   }
 
   if (filters.series_id) {
-    // This will be re-enabled after migration
-    console.log('Series filter temporarily disabled')
+    query = query.contains('series_ids', [filters.series_id])
   }
 
   // Pagination
@@ -74,13 +66,13 @@ async function getCourses(filters: {
   // Transform the data to match expected format
   const transformedCourses = (data || []).map(course => ({
     ...course,
-    subject_name: course.subject?.name || 'Unknown',
-    subject_color: course.subject?.color || '#3B82F6',
-    subject_icon: course.subject?.icon || 'book',
-    author_name: course.created_by_profile?.full_name || null,
-    series_names: [], // Will be populated after migration
-    country_names: [], // Will be populated after migration
-    tag_names: [], // Will be populated after migration
+    subject_name: course.subject_name || 'Unknown',
+    subject_color: course.subject_color || '#3B82F6',
+    subject_icon: course.subject_icon || 'book',
+    author_name: course.author_name || null,
+    series_names: course.series_names || [],
+    country_names: course.country_names || [],
+    tag_names: course.tag_names || [],
   }))
 
   return { courses: transformedCourses, total: count || 0 }

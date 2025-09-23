@@ -24,7 +24,8 @@ import {
   ChevronDown,
   ChevronRight,
   UserCog,
-  Globe
+  Globe,
+  Images
 } from 'lucide-react'
 import type { ProfileWithDetails } from '@/types/database'
 
@@ -70,6 +71,12 @@ const navigationItems: NavItem[] = [
         title: 'Quiz & Exercices',
         href: '/dashboard/content/quiz',
         icon: FileText,
+        roles: ['member', 'admin'],
+      },
+      {
+        title: 'Galerie',
+        href: '/dashboard/gallery',
+        icon: Images,
         roles: ['member', 'admin'],
       },
     ]

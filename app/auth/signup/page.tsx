@@ -21,17 +21,24 @@ export default function SignUpPage() {
     setLoading(true)
     setError('')
     setMessage('')
-    const { data, error } = await signUp({ email, password })
-    if (error) {
-      setError(error.message)
-    } else {
+    try {
+      const { data, error } = await signUp({ email, password })
+      if (error) {
+        setError(error.message)
+        return
+      }
+
       if (data?.session) {
         window.location.href = '/auth/onboarding'
       } else {
         window.location.href = `/auth/email-sent?email=${encodeURIComponent(email)}`
       }
+    } catch (err) {
+      console.error('Supabase sign up failed', err)
+      setError('Impossible de contacter le service d’authentification. Vérifiez votre connexion internet et la configuration Supabase, puis réessayez.')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   return (

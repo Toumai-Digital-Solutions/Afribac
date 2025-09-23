@@ -90,6 +90,7 @@ export function ExamEditor({ mode, initialData }: ExamEditorProps) {
   const [loading, setLoading] = useState(true)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [activeTab, setActiveTab] = useState('questions')
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   // Load form data
   useEffect(() => {
@@ -104,19 +105,22 @@ export function ExamEditor({ mode, initialData }: ExamEditorProps) {
       const [
         { data: subjectsData },
         { data: seriesData },
-        { data: tagsData }
+        { data: tagsData },
+        userRes,
       ] = await Promise.all([
         supabase.from('subjects').select('*').order('name'),
         supabase.from('series').select(`
           *,
           countries(*)
         `).order('name'),
-        supabase.from('tags').select('*').order('name')
+        supabase.from('tags').select('*').order('name'),
+        supabase.auth.getUser(),
       ])
 
       setSubjects(subjectsData || [])
       setSeries(seriesData || [])
       setTags(tagsData || [])
+      setCurrentUserId(userRes.data.user?.id ?? null)
     } catch (error) {
       console.error('Error loading form data:', error)
       toast.error('Erreur lors du chargement des données')
@@ -433,6 +437,7 @@ export function ExamEditor({ mode, initialData }: ExamEditorProps) {
                       content={formData.questions_content}
                       onChange={handleChange('questions_content')}
                       placeholder="Saisissez les questions de l'examen avec formatage riche, équations mathématiques..."
+                      galleryUserId={currentUserId ?? undefined}
                     />
                     
                     <div>
@@ -461,6 +466,7 @@ export function ExamEditor({ mode, initialData }: ExamEditorProps) {
                       content={formData.correction_content}
                       onChange={handleChange('correction_content')}
                       placeholder="Saisissez la correction détaillée avec explications, calculs, solutions..."
+                      galleryUserId={currentUserId ?? undefined}
                     />
                     
                     <div>

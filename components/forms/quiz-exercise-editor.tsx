@@ -110,6 +110,7 @@ export function QuizExerciseEditor({ mode, contentType, initialData }: QuizExerc
   const [loading, setLoading] = useState(true)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [activeQuestion, setActiveQuestion] = useState<number>(0)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   // Load form data
   useEffect(() => {
@@ -125,7 +126,8 @@ export function QuizExerciseEditor({ mode, contentType, initialData }: QuizExerc
         { data: subjectsData },
         { data: seriesData },
         { data: coursesData },
-        { data: tagsData }
+        { data: tagsData },
+        userRes,
       ] = await Promise.all([
         supabase.from('subjects').select('*').order('name'),
         supabase.from('series').select(`
@@ -133,13 +135,15 @@ export function QuizExerciseEditor({ mode, contentType, initialData }: QuizExerc
           countries(*)
         `).order('name'),
         supabase.from('courses').select('*').eq('status', 'publish').order('title'),
-        supabase.from('tags').select('*').order('name')
+        supabase.from('tags').select('*').order('name'),
+        supabase.auth.getUser(),
       ])
 
       setSubjects(subjectsData || [])
       setSeries(seriesData || [])
       setCourses(coursesData || [])
       setTags(tagsData || [])
+      setCurrentUserId(userRes.data.user?.id ?? null)
     } catch (error) {
       console.error('Error loading form data:', error)
       toast.error('Erreur lors du chargement des données')

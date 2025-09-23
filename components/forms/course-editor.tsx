@@ -72,6 +72,7 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   // Auto-save disabled temporarily
   // const { isSaving, lastSaved, forceSave, saveStatus } = useAutoSave({
@@ -100,7 +101,8 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
         { data: subjectsData },
         { data: seriesData },
         { data: tagsData },
-        { data: countriesData }
+        { data: countriesData },
+        userRes,
       ] = await Promise.all([
         supabase.from('subjects').select('*').order('name'),
         supabase.from('series').select(`
@@ -108,13 +110,15 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
           countries(*)
         `).order('name'),
         supabase.from('tags').select('*').order('name'),
-        supabase.from('countries').select('*').order('name')
+        supabase.from('countries').select('*').order('name'),
+        supabase.auth.getUser(),
       ])
 
       setSubjects(subjectsData || [])
       setSeries(seriesData || [])
       setTags(tagsData || [])
       setCountries(countriesData || [])
+      setCurrentUserId(userRes.data.user?.id ?? null)
     } catch (error) {
       console.error('Error loading form data:', error)
       toast.error('Erreur lors du chargement des données')
@@ -420,6 +424,7 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
                 content={formData.content}
                 onChange={handleChange('content')}
                 placeholder="Rédigez le contenu de votre cours avec formatage riche, équations mathématiques, images..."
+                galleryUserId={currentUserId ?? undefined}
               />
             </CardContent>
           </Card>

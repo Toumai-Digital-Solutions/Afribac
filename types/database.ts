@@ -400,6 +400,44 @@ export interface Database {
           updated_at?: string
         }
       }
+      gallery_assets: {
+        Row: {
+          id: string
+          type: 'image' | 'latex'
+          title: string
+          description: string | null
+          file_url: string | null
+          file_path: string | null
+          latex_content: string | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          type: 'image' | 'latex'
+          title: string
+          description?: string | null
+          file_url?: string | null
+          file_path?: string | null
+          latex_content?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          type?: 'image' | 'latex'
+          title?: string
+          description?: string | null
+          file_url?: string | null
+          file_path?: string | null
+          latex_content?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
       user_progress: {
         Row: {
           id: string
