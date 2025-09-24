@@ -8,7 +8,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { AlertCircle, Trash } from 'lucide-react'
+import { AlertCircle, PencilLine, Trash } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatDistanceToNow } from 'date-fns'
 import { fr } from 'date-fns/locale'
@@ -31,6 +31,7 @@ export function GalleryManager({ assets: initialAssets, userRole, userId }: Gall
   const [assets, setAssets] = useState<GalleryAssetRow[]>(initialAssets)
   const [filter, setFilter] = useState<'all' | 'image' | 'latex'>('all')
   const [uploadOpen, setUploadOpen] = useState(false)
+  const [editingAsset, setEditingAsset] = useState<GalleryAssetRow | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [error, setError] = useState<string>('')
 
@@ -69,6 +70,19 @@ export function GalleryManager({ assets: initialAssets, userRole, userId }: Gall
     }
   }
 
+  const handleDialogOpenChange = (value: boolean) => {
+    if (!value) {
+      setEditingAsset(null)
+    }
+    setUploadOpen(value)
+  }
+
+  const handleAssetUpdated = (updatedAsset: GalleryAssetRow) => {
+    setAssets((prev) => prev.map((item) => (item.id === updatedAsset.id ? updatedAsset : item)))
+    toast.success('Contenu mis à jour')
+    router.refresh()
+  }
+
   const renderLatex = (latex?: string | null) => {
     if (!latex) return null
     try {
@@ -88,7 +102,14 @@ export function GalleryManager({ assets: initialAssets, userRole, userId }: Gall
             Centralisez les ressources visuelles et formules LaTeX pour vos cours et examens.
           </p>
         </div>
-        <Button onClick={() => setUploadOpen(true)}>Ajouter à la galerie</Button>
+        <Button
+          onClick={() => {
+            setEditingAsset(null)
+            setUploadOpen(true)
+          }}
+        >
+          Ajouter à la galerie
+        </Button>
       </div>
 
       {error && (
@@ -141,18 +162,34 @@ export function GalleryManager({ assets: initialAssets, userRole, userId }: Gall
                       </div>
                     )}
                   </CardContent>
-                  <CardFooter className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{formatDistanceToNow(new Date(asset.created_at), { addSuffix: true, locale: fr })}</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive"
-                      onClick={() => handleDelete(asset)}
-                      disabled={deletingId === asset.id}
-                    >
-                      <Trash className="mr-1 h-4 w-4" />
-                      Supprimer
-                    </Button>
+                  <CardFooter className="flex items-center justify-between gap-3">
+                    <span className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(asset.created_at), { addSuffix: true, locale: fr })}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setEditingAsset(asset)
+                          setUploadOpen(true)
+                        }}
+                        disabled={deletingId === asset.id}
+                      >
+                        <PencilLine className="mr-1 h-4 w-4" />
+                        Modifier
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive"
+                        onClick={() => handleDelete(asset)}
+                        disabled={deletingId === asset.id}
+                      >
+                        <Trash className="mr-1 h-4 w-4" />
+                        Supprimer
+                      </Button>
+                    </div>
                   </CardFooter>
                 </Card>
               ))}
@@ -163,13 +200,15 @@ export function GalleryManager({ assets: initialAssets, userRole, userId }: Gall
 
       <GalleryUploadDialog
         open={uploadOpen}
-        onOpenChange={setUploadOpen}
+        onOpenChange={handleDialogOpenChange}
         onUploaded={(asset) => {
           setAssets((prev) => [asset, ...prev])
           toast.success('Contenu ajouté à la galerie')
           router.refresh()
         }}
+        onUpdated={handleAssetUpdated}
         userId={userId}
+        asset={editingAsset}
       />
     </div>
   )

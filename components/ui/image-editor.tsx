@@ -138,7 +138,7 @@ export function ImageEditor({
   imageSrc,
   onSave,
   onCancel,
-  aspect = 1,
+  aspect,
   maxWidth = 400,
   maxHeight = 400
 }: ImageEditorProps) {
@@ -147,6 +147,15 @@ export function ImageEditor({
   const [zoom, setZoom] = useState(1)
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [dynamicAspect, setDynamicAspect] = useState<number | undefined>(aspect)
+  const isAspectLocked = typeof aspect === 'number'
+  const aspectPresets: Array<{ label: string; value: number | undefined }> = [
+    { label: 'Libre', value: undefined },
+    { label: '1:1', value: 1 },
+    { label: '4:3', value: 4 / 3 },
+    { label: '3:4', value: 3 / 4 },
+    { label: '16:9', value: 16 / 9 },
+  ]
 
   const onCropComplete = useCallback(
     (croppedArea: Area, croppedAreaPixels: Area) => {
@@ -199,6 +208,7 @@ export function ImageEditor({
     setRotation(0)
     setZoom(1)
     setCroppedAreaPixels(null)
+    setDynamicAspect(aspect)
     onCancel()
   }
 
@@ -208,8 +218,9 @@ export function ImageEditor({
       setRotation(0)
       setZoom(1)
       setCroppedAreaPixels(null)
+      setDynamicAspect(aspect)
     }
-  }, [open])
+  }, [open, aspect])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -228,7 +239,7 @@ export function ImageEditor({
               crop={crop}
               rotation={rotation}
               zoom={zoom}
-              aspect={aspect}
+              aspect={dynamicAspect}
               onCropChange={setCrop}
               onRotationChange={setRotation}
               onCropComplete={onCropComplete}
@@ -324,6 +335,30 @@ export function ImageEditor({
                 </Button>
               </div>
             </div>
+            {!isAspectLocked && (
+              <div className="space-y-2">
+                <Label>Format de recadrage</Label>
+                <div className="flex flex-wrap gap-2">
+                  {aspectPresets.map(({ label, value }) => {
+                    const isActive = value === undefined ? dynamicAspect === undefined : dynamicAspect === value
+                    return (
+                      <Button
+                        key={label}
+                        type="button"
+                        variant={isActive ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => {
+                          setDynamicAspect(value)
+                          setCroppedAreaPixels(null)
+                        }}
+                      >
+                        {label}
+                      </Button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

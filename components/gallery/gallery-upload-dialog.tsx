@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import katex from 'katex'
 import Image from 'next/image'
-import { Image as ImageIcon, PencilLine } from 'lucide-react'
+import { Image as ImageIcon, PencilLine, Undo2 } from 'lucide-react'
 import { ImageEditor } from '@/components/ui/image-editor'
 type GalleryAssetRow = Database['public']['Tables']['gallery_assets']['Row']
 
@@ -47,6 +47,22 @@ export function GalleryUploadDialog({
   const [imageEditorOpen, setImageEditorOpen] = useState(false)
   const [imageEditorSource, setImageEditorSource] = useState<string | null>(null)
   const [editedImageBlob, setEditedImageBlob] = useState<Blob | null>(null)
+  const isEditingImage = isEditMode && asset?.type === 'image'
+  const isEditingLatex = isEditMode && asset?.type === 'latex'
+  const imageEditorAvailableSource = imagePreview ?? (asset?.type === 'image' ? asset.file_url ?? null : null)
+  const canUseImageEditor = Boolean(imageEditorAvailableSource)
+
+  const dialogTitle = isEditingImage
+    ? "Modifier l'image"
+    : isEditingLatex
+    ? 'Modifier la formule LaTeX'
+    : 'Ajouter à la galerie'
+
+  const dialogDescription = isEditingImage
+    ? "Mettez à jour le titre ou ajustez l'image grâce à l'éditeur intégré."
+    : isEditingLatex
+    ? 'Ajustez le contenu ou la mise en forme de la formule enregistrée.'
+    : "Importez une image pédagogique ou enregistrez une formule LaTeX pour la réutiliser dans vos contenus."
 
   const sanitizeFileName = useCallback((value: string) => value.replace(/[^a-zA-Z0-9.\-_]/g, '-'), [])
 
@@ -73,6 +89,8 @@ export function GalleryUploadDialog({
       setDescription(asset.description ?? '')
       setEditedImageBlob(null)
       setImageFile(null)
+      setImageEditorSource(null)
+      setImageEditorOpen(false)
 
       if (asset.type === 'image') {
         setTitle(asset.title)
@@ -110,9 +128,9 @@ export function GalleryUploadDialog({
     setDescription('')
     setImageFile(null)
     setImagePreview(null)
-     setEditedImageBlob(null)
-     setImageEditorSource(null)
-     setImageEditorOpen(false)
+    setEditedImageBlob(null)
+    setImageEditorSource(null)
+    setImageEditorOpen(false)
     setLatex('\\frac{a}{b}')
     setLatexTitle('Formule LaTeX')
     setLatexMode('inline')
@@ -120,12 +138,12 @@ export function GalleryUploadDialog({
   }
 
   const closeDialog = () => {
-    onOpenChange(false)
     resetState()
+    onOpenChange(false)
   }
 
   const openImageEditor = () => {
-    const source = imagePreview ?? asset?.file_url ?? null
+    const source = imageEditorAvailableSource
     if (!source) {
       toast.error('Ajoutez ou sélectionnez une image à modifier.')
       return
@@ -135,10 +153,25 @@ export function GalleryUploadDialog({
   }
 
   const handleImageEdited = (blob: Blob) => {
+    const nextPreviewUrl = URL.createObjectURL(blob)
     setEditedImageBlob(blob)
-    const url = URL.createObjectURL(blob)
-    setImagePreview(url)
+    setImagePreview((prev) => {
+      if (prev && prev.startsWith('blob:')) {
+        URL.revokeObjectURL(prev)
+      }
+      return nextPreviewUrl
+    })
+    setImageFile(null)
     setImageEditorOpen(false)
+    setImageEditorSource(null)
+  }
+
+  const handleResetImage = () => {
+    if (!asset || asset.type !== 'image') return
+    setImageFile(null)
+    setEditedImageBlob(null)
+    setImageEditorSource(null)
+    setImagePreview(asset.file_url ?? null)
   }
 
   const handleImageUpload = async () => {
@@ -164,16 +197,24 @@ export function GalleryUploadDialog({
         let shouldDeletePrevious = false
 
         if (hasEditedBlob && editedImageBlob) {
-          const baseName = imageFile?.name ?? currentAsset?.file_path?.split('/').pop() ?? `image-${Date.now()}.jpg`
-          const sanitizedName = sanitizeFileName(baseName)
+          const sourceName = imageFile?.name ?? currentAsset?.file_path?.split('/').pop() ?? `image-${Date.now()}`
+          const baseName = sanitizeFileName(sourceName.replace(/\.[^/.]+$/, '')) || 'image'
+          const blobType = editedImageBlob.type || imageFile?.type || 'image/jpeg'
+          const subtype = blobType.split('/')[1] ?? 'jpeg'
+          const extension = subtype.includes('png')
+            ? 'png'
+            : subtype.includes('webp')
+            ? 'webp'
+            : subtype.includes('gif')
+            ? 'gif'
+            : 'jpg'
+          const fileName = `${baseName}-edited.${extension}`
+          const sanitizedName = sanitizeFileName(fileName)
           filePayload = new File([editedImageBlob], sanitizedName, {
-            type: editedImageBlob.type || imageFile?.type || 'image/jpeg',
+            type: blobType,
           })
-
-          if (!currentAsset?.file_path || hasNewFile) {
-            targetPath = `${userId}/${Date.now()}-${sanitizedName}`
-            shouldDeletePrevious = Boolean(currentAsset?.file_path && targetPath !== currentAsset.file_path)
-          }
+          targetPath = `${userId}/${Date.now()}-${sanitizedName}`
+          shouldDeletePrevious = Boolean(currentAsset?.file_path && currentAsset.file_path !== targetPath)
         } else if (hasNewFile && imageFile) {
           const sanitizedName = sanitizeFileName(imageFile.name)
           filePayload = imageFile
@@ -293,6 +334,25 @@ export function GalleryUploadDialog({
 
     setUploading(true)
     try {
+      if (isEditMode && asset?.type === 'latex') {
+        const { data, error } = await supabase
+          .from('gallery_assets')
+          .update({
+            title: latexTitle.trim() || 'Formule sans titre',
+            description: description.trim() || null,
+            latex_content: latex.trim(),
+          })
+          .eq('id', asset.id)
+          .select()
+          .single()
+
+        if (error) throw error
+
+        onUpdated?.(data)
+        closeDialog()
+        return
+      }
+
       const { data, error } = await supabase
         .from('gallery_assets')
         .insert({
@@ -318,21 +378,27 @@ export function GalleryUploadDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={(value) => {
-      if (!value) resetState()
-      onOpenChange(value)
-    }}>
-      <DialogContent className="sm:max-w-3xl">
+    <>
+      <Dialog
+        open={open}
+        onOpenChange={(value) => {
+          if (!value) resetState()
+          onOpenChange(value)
+        }}
+      >
+        <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Ajouter à la galerie</DialogTitle>
-          <DialogDescription>
-            Importez une image pédagogique ou enregistrez une formule LaTeX pour la réutiliser dans vos contenus.
-          </DialogDescription>
+          <DialogTitle>{dialogTitle}</DialogTitle>
+          <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
         <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as 'image' | 'latex')} className="space-y-4">
           <TabsList>
-            <TabsTrigger value="image">Image</TabsTrigger>
-            <TabsTrigger value="latex">Formule LaTeX</TabsTrigger>
+            <TabsTrigger value="image" disabled={isEditMode && !isEditingImage}>
+              Image
+            </TabsTrigger>
+            <TabsTrigger value="latex" disabled={isEditMode && !isEditingLatex}>
+              Formule LaTeX
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="image" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
@@ -373,6 +439,30 @@ export function GalleryUploadDialog({
                     disabled={uploading}
                   />
                   <p className="text-xs text-muted-foreground">Formats recommandés : PNG, JPG ou SVG (max 5 MB).</p>
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={openImageEditor}
+                      disabled={!canUseImageEditor || uploading}
+                    >
+                      <PencilLine className="mr-2 h-4 w-4" />
+                      Modifier / recadrer
+                    </Button>
+                    {isEditingImage && asset?.file_url ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={handleResetImage}
+                        disabled={uploading}
+                      >
+                        <Undo2 className="mr-2 h-4 w-4" />
+                        Réinitialiser l'image
+                      </Button>
+                    ) : null}
+                  </div>
                 </div>
               </div>
               <div className="flex items-center justify-center rounded-lg border bg-muted/40 p-4 min-h-[220px]">
@@ -464,15 +554,33 @@ export function GalleryUploadDialog({
           </Button>
           {activeTab === 'image' ? (
             <Button type="button" onClick={handleImageUpload} disabled={uploading}>
-              {uploading ? 'Enregistrement…' : "Enregistrer l'image"}
+              {uploading ? (isEditMode ? 'Mise à jour…' : 'Enregistrement…') : isEditMode ? "Mettre à jour l'image" : "Enregistrer l'image"}
             </Button>
           ) : (
             <Button type="button" onClick={handleLatexSave} disabled={uploading}>
-              {uploading ? 'Enregistrement…' : 'Enregistrer la formule'}
+              {uploading ? (isEditMode ? 'Mise à jour…' : 'Enregistrement…') : isEditMode ? 'Mettre à jour la formule' : 'Enregistrer la formule'}
             </Button>
           )}
         </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+      {imageEditorSource ? (
+        <ImageEditor
+          open={imageEditorOpen}
+          onOpenChange={(value) => {
+            setImageEditorOpen(value)
+            if (!value) {
+              setImageEditorSource(null)
+            }
+          }}
+          imageSrc={imageEditorSource}
+          onSave={handleImageEdited}
+          onCancel={() => {
+            setImageEditorOpen(false)
+            setImageEditorSource(null)
+          }}
+        />
+      ) : null}
+    </>
   )
 }

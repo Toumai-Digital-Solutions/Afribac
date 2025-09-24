@@ -12,7 +12,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import katex from 'katex'
 import { GalleryUploadDialog } from '@/components/gallery/gallery-upload-dialog'
-import { Loader2 } from 'lucide-react'
+import { Loader2, PencilLine } from 'lucide-react'
 
 type GalleryAssetRow = Database['public']['Tables']['gallery_assets']['Row']
 
@@ -29,6 +29,7 @@ export function GalleryPickerDialog({ open, onOpenChange, onSelect, userId }: Ga
   const [filter, setFilter] = useState<'image' | 'latex' | 'all'>('all')
   const [loading, setLoading] = useState(false)
   const [uploadOpen, setUploadOpen] = useState(false)
+  const [editingAsset, setEditingAsset] = useState<GalleryAssetRow | null>(null)
 
   useEffect(() => {
     if (!open) return
@@ -49,6 +50,22 @@ export function GalleryPickerDialog({ open, onOpenChange, onSelect, userId }: Ga
     if (filter === 'all') return assets
     return assets.filter((asset) => asset.type === filter)
   }, [assets, filter])
+
+  const handleSelectAsset = (asset: GalleryAssetRow) => {
+    onSelect(asset)
+    onOpenChange(false)
+  }
+
+  const handleDialogOpenChange = (value: boolean) => {
+    if (!value) {
+      setEditingAsset(null)
+    }
+    setUploadOpen(value)
+  }
+
+  const handleAssetUpdated = (updatedAsset: GalleryAssetRow) => {
+    setAssets((prev) => prev.map((item) => (item.id === updatedAsset.id ? updatedAsset : item)))
+  }
 
   const renderLatex = (latex?: string | null) => {
     if (!latex) return null
@@ -78,7 +95,13 @@ export function GalleryPickerDialog({ open, onOpenChange, onSelect, userId }: Ga
               <TabsTrigger value="latex">LaTeX</TabsTrigger>
             </TabsList>
           </Tabs>
-          <Button variant="outline" onClick={() => setUploadOpen(true)}>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setEditingAsset(null)
+              setUploadOpen(true)
+            }}
+          >
             Ajouter depuis mon ordinateur
           </Button>
         </div>
@@ -95,23 +118,22 @@ export function GalleryPickerDialog({ open, onOpenChange, onSelect, userId }: Ga
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {filteredAssets.map((asset) => (
-              <button
+              <div
                 key={asset.id}
-                type="button"
-                onClick={() => {
-                  onSelect(asset)
-                  onOpenChange(false)
-                }}
-                className="group text-left"
+                className="group flex h-full flex-col overflow-hidden rounded-lg border transition focus-within:border-primary hover:border-primary"
               >
-                <div className="overflow-hidden rounded-lg border transition group-hover:border-primary">
+                <button
+                  type="button"
+                  onClick={() => handleSelectAsset(asset)}
+                  className="flex h-full w-full flex-col text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                >
                   <div className="flex items-center justify-between bg-muted/40 px-3 py-2">
-                    <span className="font-medium text-sm truncate">{asset.title}</span>
+                    <span className="truncate text-sm font-medium">{asset.title}</span>
                     <Badge variant={asset.type === 'image' ? 'outline' : 'secondary'} className="capitalize">
                       {asset.type === 'image' ? 'Image' : 'LaTeX'}
                     </Badge>
                   </div>
-                  <div className="p-3 bg-white">
+                  <div className="bg-white p-3">
                     {asset.type === 'image' && asset.file_url ? (
                       <div className="relative flex h-40 items-center justify-center overflow-hidden rounded-md border bg-muted/20">
                         <Image
@@ -126,11 +148,27 @@ export function GalleryPickerDialog({ open, onOpenChange, onSelect, userId }: Ga
                       renderLatex(asset.latex_content)
                     )}
                   </div>
-                  <div className="px-3 pb-3 text-xs text-muted-foreground">
+                </button>
+                <div className="flex items-center justify-between border-t px-3 py-2">
+                  <span className="text-xs text-muted-foreground">
                     Ajouté {formatDistanceToNow(new Date(asset.created_at), { addSuffix: true, locale: fr })}
-                  </div>
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={(event) => {
+                      event.preventDefault()
+                      event.stopPropagation()
+                      setEditingAsset(asset)
+                      setUploadOpen(true)
+                    }}
+                  >
+                    <PencilLine className="mr-1 h-4 w-4" />
+                    Modifier
+                  </Button>
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         )}
@@ -143,15 +181,16 @@ export function GalleryPickerDialog({ open, onOpenChange, onSelect, userId }: Ga
 
         <GalleryUploadDialog
           open={uploadOpen}
-          onOpenChange={setUploadOpen}
+          onOpenChange={handleDialogOpenChange}
           onUploaded={(asset) => {
             setAssets((prev) => [asset, ...prev])
             setFilter(asset.type === 'image' ? 'image' : 'latex')
           }}
+          onUpdated={handleAssetUpdated}
           userId={userId}
+          asset={editingAsset}
         />
       </DialogContent>
     </Dialog>
   )
 }
-
