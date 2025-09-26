@@ -17,6 +17,7 @@ import {
   CalendarClock,
   Clock,
   Compass,
+  FileText,
   GraduationCap,
   LibraryBig,
   Loader2,
@@ -471,23 +472,32 @@ export function StudentDashboard({ profile }: StudentDashboardProps) {
               </Link>
             </div>
           </div>
-          <div className="grid w-full max-w-sm gap-3">
-            <div className="rounded-2xl border border-white/20 bg-white/15 p-4 backdrop-blur">
-              <p className="text-xs uppercase text-white/70">Cours en cours</p>
-              <p className="mt-2 text-3xl font-semibold">{data.stats.activeCourses}</p>
-              <p className="text-xs text-white/70">{data.stats.activeCourses > 0 ? 'Prêt(e) à continuer là où vous vous êtes arrêté(e).' : 'Commencez un nouveau cours dès maintenant.'}</p>
-            </div>
-            <div className="rounded-2xl border border-white/20 bg-white/15 p-4 backdrop-blur">
-              <p className="text-xs uppercase text-white/70">Cours terminés</p>
-              <p className="mt-2 text-3xl font-semibold">{data.stats.completedCourses}</p>
-              <p className="text-xs text-white/70">Bravo pour vos réussites !</p>
-            </div>
-            <div className="rounded-2xl border border-white/20 bg-white/15 p-4 backdrop-blur">
-              <p className="text-xs uppercase text-white/70">Temps d'étude</p>
-              <p className="mt-2 text-3xl font-semibold">{formatMinutesToHours(data.stats.totalTimeMinutes)}</p>
-              <p className="text-xs text-white/70">({Math.max(data.stats.averageProgress, 0)}% de progression moyenne)</p>
-            </div>
+          <div className="flex w-full max-w-sm flex-col items-center justify-center gap-4 rounded-3xl border border-white/25 bg-white/10 p-6 text-center text-sm text-white/80 backdrop-blur">
+            <div className="aspect-square w-36 rounded-full bg-gradient-to-br from-white/40 via-primary/40 to-white/30" />
+            <p>
+              Placeholder illustration · Lottie
+              <br />
+              (future scène d'accueil étudiant·e)
+            </p>
           </div>
+        </div>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-3">
+        <div className="rounded-2xl border border-muted-foreground/10 bg-muted/20 p-5">
+          <p className="text-xs uppercase text-muted-foreground">Cours en cours</p>
+          <p className="mt-3 text-3xl font-semibold">{data.stats.activeCourses}</p>
+          <p className="mt-1 text-xs text-muted-foreground">Reprenez là où vous vous êtes arrêté·e.</p>
+        </div>
+        <div className="rounded-2xl border border-muted-foreground/10 bg-muted/20 p-5">
+          <p className="text-xs uppercase text-muted-foreground">Cours terminés</p>
+          <p className="mt-3 text-3xl font-semibold">{data.stats.completedCourses}</p>
+          <p className="mt-1 text-xs text-muted-foreground">Bravo pour vos réussites !</p>
+        </div>
+        <div className="rounded-2xl border border-muted-foreground/10 bg-muted/20 p-5">
+          <p className="text-xs uppercase text-muted-foreground">Temps d'étude</p>
+          <p className="mt-3 text-3xl font-semibold">{formatMinutesToHours(data.stats.totalTimeMinutes)}</p>
+          <p className="mt-1 text-xs text-muted-foreground">Progression moyenne : {Math.max(data.stats.averageProgress, 0)}%</p>
         </div>
       </section>
 
@@ -729,6 +739,46 @@ export function StudentDashboard({ profile }: StudentDashboardProps) {
               </Button>
             </Link>
           </CardContent>
+        </Card>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(240px,0.85fr)]">
+        <Card>
+          <CardHeader>
+            <CardTitle>Actions rapides</CardTitle>
+            <CardDescription>
+              Choisissez votre prochaine étape sans vous submerger d&apos;options.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Link href="/student/courses">
+              <Button className="w-full justify-start rounded-2xl bg-muted/40 text-foreground hover:bg-muted/60">
+                <BookOpen className="mr-2 h-4 w-4" />
+                Continuer mes cours
+              </Button>
+            </Link>
+            <Link href="/student/exams">
+              <Button variant="outline" className="w-full justify-start rounded-2xl">
+                <FileText className="mr-2 h-4 w-4" />
+                Réviser un examen
+              </Button>
+            </Link>
+            <Link href="/student/simulation">
+              <Button variant="outline" className="w-full justify-start rounded-2xl">
+                <Play className="mr-2 h-4 w-4" />
+                Lancer une simulation
+              </Button>
+            </Link>
+            <Link href="/student/progress">
+              <Button variant="outline" className="w-full justify-start rounded-2xl">
+                <TrendingUp className="mr-2 h-4 w-4" />
+                Suivre ma progression
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+        <Card className="flex items-center justify-center border-dashed border-muted-foreground/30 bg-muted/20 text-xs text-muted-foreground">
+          Placeholder illustration · Lottie (tableau de bord minimaliste)
         </Card>
       </section>
 
