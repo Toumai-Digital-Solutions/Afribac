@@ -41,7 +41,7 @@ interface NavItem {
 const navigationItems: NavItem[] = [
   // Common Navigation
   {
-    title: 'Vue d\'ensemble',
+    title: 'Accueil',
     href: '/dashboard',
     icon: BarChart3,
     roles: ['admin', 'member', 'user'],
@@ -131,31 +131,31 @@ const navigationItems: NavItem[] = [
   // Student Navigation
   {
     title: 'Mes cours',
-    href: '/dashboard/learn',
+    href: '/student/courses',
     icon: GraduationCap,
     roles: ['user'],
   },
   {
     title: 'Bibliothèque',
-    href: '/dashboard/learn/library',
+    href: '/student/library',
     icon: BookOpen,
     roles: ['user'],
   },
   {
     title: 'Examens',
-    href: '/dashboard/learn/exams',
+    href: '/student/exams',
     icon: FileText,
     roles: ['user'],
   },
   {
     title: 'Simulation',
-    href: '/dashboard/learn/simulation',
+    href: '/student/simulation',
     icon: Play,
     roles: ['user'],
   },
   {
     title: 'Mes progrès',
-    href: '/dashboard/learn/progress',
+    href: '/student/progress',
     icon: BarChart3,
     roles: ['user'],
   },
