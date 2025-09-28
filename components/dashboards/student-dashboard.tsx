@@ -208,7 +208,7 @@ export function StudentDashboard({ profile }: StudentDashboardProps) {
         if (courseCountResult.error) throw courseCountResult.error
         if (examCountResult.error) throw examCountResult.error
 
-        const progressData = (progressResult.data || []).filter((entry) => entry.course) as Array<{
+        const progressData = (progressResult.data || []).filter((entry) => entry.course) as unknown as Array<{
           id: string
           completion_percentage: number
           time_spent: number

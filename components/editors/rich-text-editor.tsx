@@ -258,21 +258,24 @@ const RichTextEditor = ({
     if (!trimmed) return
 
     const chain = editor.chain().focus()
+    let inserted = false
 
     if (mathMode === 'inline') {
-      const inserted = chain.insertContent({ type: 'mathInline', attrs: { latex: trimmed } }).run()
-      if (!inserted) {
-        editor.chain().focus().insertContent(`$${trimmed}$ `).run()
-      }
+      inserted = chain.insertContent({ type: 'mathInline', attrs: { latex: trimmed } }).run()
     } else {
-      const inserted = chain.insertContent([{ type: 'mathBlock', attrs: { latex: trimmed } }, { type: 'paragraph' }]).run()
-      if (!inserted) {
-        editor.chain().focus().insertContent(`\n$$${trimmed}$$\n`).run()
-      }
+      inserted = chain.insertContent([{ type: 'mathBlock', attrs: { latex: trimmed } }, { type: 'paragraph' }]).run()
     }
 
-    setMathDialogOpen(false)
+    if (!inserted) {
+      const content = mathMode === 'inline'
+        ? `$${trimmed}$ `
+        : `\n$$${trimmed}$$\n`
+
+      editor.chain().focus().insertContent(content).run()
+    }
+
     migrateMathStrings(editor)
+    setMathDialogOpen(false)
   }, [editor, mathLatex, mathMode])
 
   const handleInsertFromGallery = useCallback((asset: GalleryAssetRow) => {
@@ -290,7 +293,18 @@ const RichTextEditor = ({
     if (asset.type === 'latex' && asset.latex_content) {
       const latex = asset.latex_content.trim()
       if (!latex) return
-      editor.chain().focus().insertContent(`\n$$${latex}$$\n`).run()
+
+      const inserted = editor
+        .chain()
+        .focus()
+        .insertContent([{ type: 'mathBlock', attrs: { latex } }, { type: 'paragraph' }])
+        .run()
+
+      if (!inserted) {
+        editor.chain().focus().insertContent(`\n$$${latex}$$\n`).run()
+      }
+
+      migrateMathStrings(editor)
     }
   }, [editor])
 

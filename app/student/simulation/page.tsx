@@ -147,7 +147,7 @@ export default async function StudentSimulationPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ExamSimulation title="Simulation Baccalauréat - Démonstration" duration={180} />
+            <ExamSimulation title="Simulation Baccalauréat - Démonstration" duration={180} questions={[]} />
             <p className="mt-4 text-xs text-muted-foreground">
               Cette simulation de démonstration utilise des questions fictives. Les sujets officiels publiés sur Afribac seront automatiquement proposés ici.
             </p>

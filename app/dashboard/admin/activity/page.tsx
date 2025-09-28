@@ -120,12 +120,12 @@ export default async function AdminActivityPage({ searchParams }: { searchParams
 
   const [logsResult, actionsResult, entitiesResult, rolesResult, actorsResult] = await Promise.all([
     logsQuery,
-    supabase.from('activity_logs').select('action_type', { distinct: true }).not('action_type', 'is', null).order('action_type', { ascending: true }),
-    supabase.from('activity_logs').select('entity_type', { distinct: true }).not('entity_type', 'is', null).order('entity_type', { ascending: true }),
-    supabase.from('activity_logs').select('actor_role', { distinct: true }).not('actor_role', 'is', null).order('actor_role', { ascending: true }),
+    supabase.from('activity_logs').select('action_type').not('action_type', 'is', null).order('action_type', { ascending: true }),
+    supabase.from('activity_logs').select('entity_type').not('entity_type', 'is', null).order('entity_type', { ascending: true }),
+    supabase.from('activity_logs').select('actor_role').not('actor_role', 'is', null).order('actor_role', { ascending: true }),
     supabase
       .from('activity_log_details')
-      .select('actor_id, actor_name, actor_email', { distinct: true })
+      .select('actor_id, actor_name, actor_email')
       .not('actor_id', 'is', null)
       .order('actor_name', { ascending: true }),
   ])
@@ -151,14 +151,30 @@ export default async function AdminActivityPage({ searchParams }: { searchParams
     new Set((rolesResult.data ?? []).map((row) => sanitizeOption((row as any).actor_role)).filter(Boolean))
   ).sort()
 
-  const actors = (actorsResult.data ?? [])
-    .map((row) => ({
-      id: (row as any).actor_id as string,
-      name: sanitizeOption((row as any).actor_name),
-      email: sanitizeOption((row as any).actor_email),
-    }))
-    .filter((actor) => actor.id)
-    .sort((a, b) => (a.name || a.email || '').localeCompare(b.name || b.email || ''))
+  const actorMap = new Map<string, { id: string; name: string; email: string }>()
+
+  for (const row of actorsResult.data ?? []) {
+    const id = sanitizeOption((row as any).actor_id)
+    if (!id) continue
+
+    const name = sanitizeOption((row as any).actor_name)
+    const email = sanitizeOption((row as any).actor_email)
+
+    const existing = actorMap.get(id)
+
+    if (!existing) {
+      actorMap.set(id, { id, name, email })
+      continue
+    }
+
+    actorMap.set(id, {
+      id,
+      name: existing.name || name,
+      email: existing.email || email,
+    })
+  }
+
+  const actors = Array.from(actorMap.values()).sort((a, b) => (a.name || a.email || '').localeCompare(b.name || b.email || ''))
 
   const hasFilters = Boolean(actionFilter || entityFilter || roleFilter || statusFilter || actorFilter || searchTerm)
 
