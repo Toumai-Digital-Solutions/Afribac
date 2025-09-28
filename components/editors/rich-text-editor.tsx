@@ -2,7 +2,7 @@
 
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import Mathematics from '@tiptap/extension-mathematics'
+import Mathematics, { migrateMathStrings } from '@tiptap/extension-mathematics'
 import Placeholder from '@tiptap/extension-placeholder'
 import { Table, TableRow, TableHeader, TableCell } from '@tiptap/extension-table'
 import Image from '@tiptap/extension-image'
@@ -39,7 +39,8 @@ import {
   AlignJustify,
   Pi,
   Images,
-  Wand2
+  Wand2,
+  FileCode
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { GalleryPickerDialog } from '@/components/gallery/gallery-picker-dialog'
@@ -90,6 +91,8 @@ const RichTextEditor = ({
   const [mathLatex, setMathLatex] = useState('\\frac{a}{b}')
   const [mathMode, setMathMode] = useState<'inline' | 'block'>('inline')
   const [galleryDialogOpen, setGalleryDialogOpen] = useState(false)
+  const [htmlDialogOpen, setHtmlDialogOpen] = useState(false)
+  const [htmlSnippet, setHtmlSnippet] = useState('<p>Contenu HTML</p>')
 
   // Update ref when onChange changes
   useEffect(() => {
@@ -153,6 +156,46 @@ const RichTextEditor = ({
     },
   }, [isMounted])
 
+  const sanitizeHtmlSnippet = useCallback((raw: string) => {
+    const trimmed = raw.trim()
+    if (!trimmed) return ''
+
+    if (typeof window === 'undefined' || typeof window.DOMParser === 'undefined') {
+      return trimmed
+    }
+
+    try {
+      const parser = new DOMParser()
+      const doc = parser.parseFromString(`<div>${trimmed}</div>`, 'text/html')
+      doc.querySelectorAll('script, style, iframe, object, embed').forEach((el) => el.remove())
+      doc.body.querySelectorAll('*').forEach((el) => {
+        Array.from(el.attributes).forEach((attr) => {
+          if (attr.name.toLowerCase().startsWith('on')) {
+            el.removeAttribute(attr.name)
+          }
+        })
+      })
+      return doc.body.innerHTML
+    } catch (error) {
+      console.error('Erreur lors de la sanitisation du HTML:', error)
+      return trimmed
+    }
+  }, [])
+
+  const htmlPreview = useMemo(() => sanitizeHtmlSnippet(htmlSnippet), [htmlSnippet, sanitizeHtmlSnippet])
+  const canInsertHtml = useMemo(() => Boolean(htmlPreview.trim()), [htmlPreview])
+
+  const handleInsertHtml = useCallback(() => {
+    if (!editor) return
+    const sanitized = sanitizeHtmlSnippet(htmlSnippet)
+    if (!sanitized) return
+
+    editor.chain().focus().insertContent(sanitized).run()
+    migrateMathStrings(editor)
+    setHtmlDialogOpen(false)
+    setHtmlSnippet('<p>Contenu HTML</p>')
+  }, [editor, htmlSnippet, sanitizeHtmlSnippet])
+
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {
       editor.commands.setContent(content, { emitUpdate: false })
@@ -213,11 +256,23 @@ const RichTextEditor = ({
     if (!editor) return
     const trimmed = mathLatex.trim()
     if (!trimmed) return
-    const content = mathMode === 'inline'
-      ? `$${trimmed}$ `
-      : `\n$$${trimmed}$$\n`
-    editor.chain().focus().insertContent(content).run()
+
+    const chain = editor.chain().focus()
+
+    if (mathMode === 'inline') {
+      const inserted = chain.insertContent({ type: 'mathInline', attrs: { latex: trimmed } }).run()
+      if (!inserted) {
+        editor.chain().focus().insertContent(`$${trimmed}$ `).run()
+      }
+    } else {
+      const inserted = chain.insertContent([{ type: 'mathBlock', attrs: { latex: trimmed } }, { type: 'paragraph' }]).run()
+      if (!inserted) {
+        editor.chain().focus().insertContent(`\n$$${trimmed}$$\n`).run()
+      }
+    }
+
     setMathDialogOpen(false)
+    migrateMathStrings(editor)
   }, [editor, mathLatex, mathMode])
 
   const handleInsertFromGallery = useCallback((asset: GalleryAssetRow) => {
@@ -312,6 +367,9 @@ const RichTextEditor = ({
             <Button variant="ghost" size="sm" type="button" onClick={addTable}>
               <TableIcon className="h-4 w-4" />
             </Button>
+            <Button variant="ghost" size="sm" type="button" onClick={() => setHtmlDialogOpen(true)} title="Insérer du HTML" aria-label="Insérer du HTML">
+              <FileCode className="h-4 w-4" />
+            </Button>
             <Button variant="ghost" size="sm" type="button" onClick={() => setMathDialogOpen(true)}>
               <Pi className="h-4 w-4" />
             </Button>
@@ -356,6 +414,48 @@ const RichTextEditor = ({
           onSelect={handleInsertFromGallery}
           userId={galleryUserId}
         />
+      )}
+
+      {editable && (
+        <Dialog
+          open={htmlDialogOpen}
+          onOpenChange={(open) => {
+            setHtmlDialogOpen(open)
+            if (!open) {
+              setHtmlSnippet('<p>Contenu HTML</p>')
+            }
+          }}
+        >
+          <DialogContent className="sm:max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Insérer un extrait HTML</DialogTitle>
+              <DialogDescription>
+                Collez un fragment HTML. Les balises sensibles (script, style, iframe…) et attributs d'évènements seront automatiquement supprimés.
+              </DialogDescription>
+            </DialogHeader>
+            <Textarea
+              value={htmlSnippet}
+              onChange={(event) => setHtmlSnippet(event.target.value)}
+              className="min-h-[200px] resize-y"
+              placeholder="<div>Votre contenu HTML</div>"
+            />
+            <div className="rounded-lg border bg-muted/40 p-3 min-h-[120px] max-h-[320px] overflow-auto">
+              {htmlPreview ? (
+                <div dangerouslySetInnerHTML={{ __html: htmlPreview }} />
+              ) : (
+                <span className="text-xs text-muted-foreground">La prévisualisation apparaît ici.</span>
+              )}
+            </div>
+            <DialogFooter className="flex gap-2 justify-end">
+              <Button type="button" variant="ghost" onClick={() => setHtmlDialogOpen(false)}>
+                Annuler
+              </Button>
+              <Button type="button" onClick={handleInsertHtml} disabled={!canInsertHtml}>
+                Insérer
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
 
       {editable && (

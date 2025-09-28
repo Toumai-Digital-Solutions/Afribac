@@ -112,6 +112,7 @@ export function AdminDashboard({ profile }: AdminDashboardProps) {
         supabase.from('courses').select(`
           id, title, status, created_at, updated_at,
           subject:subjects(name, color),
+          topic:topics(name),
           created_by_profile:profiles(full_name)
         `).order('created_at', { ascending: false }).limit(5)
       ])

@@ -10,9 +10,10 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Autocomplete, AutocompleteOption } from '@/components/ui/autocomplete'
 import { FileText, Save, AlertTriangle, Plus } from 'lucide-react'
 import { toast } from 'sonner'
+import { logActivity } from '@/lib/activity'
 
 interface SeriesModalProps {
   initialData?: {
@@ -46,6 +47,14 @@ export function SeriesModal({ initialData, mode = 'create', trigger, onSuccess, 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [loadingCountries, setLoadingCountries] = useState(false)
+
+  const countryOptions: AutocompleteOption[] = countries
+    .filter((country) => Boolean(country?.id))
+    .map((country) => ({
+      value: country.id,
+      label: country.name,
+      hint: country.code,
+    }))
 
   useEffect(() => {
     if (open) {
@@ -129,6 +138,18 @@ export function SeriesModal({ initialData, mode = 'create', trigger, onSuccess, 
           ? 'Série modifiée avec succès' 
           : 'Série créée avec succès'
       )
+
+      const savedSeries = (result as any).data
+
+      await logActivity({
+        action: mode === 'edit' ? 'series:update' : 'series:create',
+        entityType: 'series',
+        entityId: savedSeries?.id ?? initialData?.id ?? null,
+        entityName: seriesData.name,
+        metadata: {
+          country_id: seriesData.country_id,
+        },
+      })
       
       setOpen(false)
       router.refresh()
@@ -218,24 +239,16 @@ export function SeriesModal({ initialData, mode = 'create', trigger, onSuccess, 
           {/* Country Selection */}
           <div className="space-y-2">
             <Label htmlFor="country">Pays *</Label>
-            <Select
-              value={formData.country_id}
-              onValueChange={handleChange('country_id')}
-              disabled={isSubmitting || loadingCountries}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={
-                  loadingCountries ? "Chargement..." : "Sélectionnez un pays"
-                } />
-              </SelectTrigger>
-              <SelectContent>
-                {countries.map((country) => (
-                  <SelectItem key={country.id} value={country.id}>
-                    {country.name} ({country.code})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Autocomplete
+              value={formData.country_id || null}
+              onChange={(nextValue) => handleChange('country_id')(nextValue)}
+              options={countryOptions}
+              placeholder={loadingCountries ? 'Chargement...' : 'Sélectionnez un pays'}
+              searchPlaceholder="Rechercher un pays..."
+              emptyText="Aucun pays trouvé"
+              loading={loadingCountries}
+              disabled={isSubmitting}
+            />
             {errors.country_id && (
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />

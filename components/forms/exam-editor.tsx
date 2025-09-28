@@ -25,6 +25,8 @@ import { MultiSelect, Option } from '@/components/ui/multi-select'
 import { FileUpload } from './file-upload'
 import { createClient } from '@/lib/supabase/client'
 import { Exam, Subject, Series, Tag, Country } from '@/types/database'
+import { logActivity } from '@/lib/activity'
+import { Autocomplete, AutocompleteOption } from '@/components/ui/autocomplete'
 
 interface ExamEditorProps {
   mode: 'create' | 'edit'
@@ -233,6 +235,19 @@ export function ExamEditor({ mode, initialData }: ExamEditorProps) {
           : `Examen ${status === 'published' ? 'créé et publié' : 'créé'} avec succès`
       )
 
+      await logActivity({
+        action: mode === 'edit' ? 'exam:update' : 'exam:create',
+        entityType: 'exam',
+        entityId: examId,
+        entityName: examData.title,
+        metadata: {
+          status,
+          subject_id: formData.subject_id,
+          series_id: formData.series_id,
+          tag_ids: formData.tag_ids,
+        },
+      })
+
       router.push('/dashboard/content/exams')
     } catch (error) {
       console.error('Error saving exam:', error)
@@ -328,6 +343,27 @@ export function ExamEditor({ mode, initialData }: ExamEditorProps) {
            tag.type === 'exam_type' ? 'Type d\'examen' :
            tag.type === 'school' ? 'Écoles' : 'Sujets'
   }))
+
+  const subjectOptions: AutocompleteOption[] = subjects
+    .filter((subject) => Boolean(subject?.id))
+    .map((subject) => ({
+      value: subject.id,
+      label: subject.name,
+      leading: (
+        <span
+          className="h-3 w-3 rounded-full"
+          style={{ backgroundColor: subject.color }}
+        />
+      ),
+    }))
+
+  const seriesOptions: AutocompleteOption[] = series
+    .filter((serie) => Boolean(serie?.id))
+    .map((serie) => ({
+      value: serie.id,
+      label: serie.name,
+      hint: serie.countries?.name,
+    }))
 
   if (loading) {
     return (
@@ -595,27 +631,15 @@ export function ExamEditor({ mode, initialData }: ExamEditorProps) {
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="subject">Matière *</Label>
-                <Select 
-                  value={formData.subject_id} 
-                  onValueChange={handleChange('subject_id')}
-                >
-                  <SelectTrigger className={errors.subject_id ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Choisir une matière" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {subjects.map((subject) => (
-                      <SelectItem key={subject.id} value={subject.id}>
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: subject.color }}
-                          />
-                          {subject.name}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Autocomplete
+                  value={formData.subject_id || null}
+                  onChange={(nextValue) => handleChange('subject_id')(nextValue)}
+                  options={subjectOptions}
+                  placeholder="Choisir une matière"
+                  searchPlaceholder="Rechercher une matière..."
+                  emptyText="Aucune matière trouvée"
+                  triggerClassName={errors.subject_id ? 'border-red-500 focus-visible:ring-destructive/20' : undefined}
+                />
                 {errors.subject_id && (
                   <p className="text-sm text-red-500 mt-1">{errors.subject_id}</p>
                 )}
@@ -623,21 +647,15 @@ export function ExamEditor({ mode, initialData }: ExamEditorProps) {
 
               <div>
                 <Label htmlFor="series">Série *</Label>
-                <Select 
-                  value={formData.series_id} 
-                  onValueChange={handleChange('series_id')}
-                >
-                  <SelectTrigger className={errors.series_id ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Choisir une série" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {series.map((serie) => (
-                      <SelectItem key={serie.id} value={serie.id}>
-                        {serie.name} ({serie.countries?.name})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Autocomplete
+                  value={formData.series_id || null}
+                  onChange={(nextValue) => handleChange('series_id')(nextValue)}
+                  options={seriesOptions}
+                  placeholder="Choisir une série"
+                  searchPlaceholder="Rechercher une série..."
+                  emptyText="Aucune série trouvée"
+                  triggerClassName={errors.series_id ? 'border-red-500 focus-visible:ring-destructive/20' : undefined}
+                />
                 {errors.series_id && (
                   <p className="text-sm text-red-500 mt-1">{errors.series_id}</p>
                 )}

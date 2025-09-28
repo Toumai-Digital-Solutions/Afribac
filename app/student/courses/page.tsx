@@ -100,6 +100,11 @@ export default async function StudentCoursesPage() {
                     <Badge variant="outline">{course.subject_name}</Badge>
                     <Badge className={difficulty.className}>{difficulty.label}</Badge>
                   </div>
+                  {course.topic_name && (
+                    <Badge variant="secondary" className="w-fit text-xs">
+                      {course.topic_name}
+                    </Badge>
+                  )}
                   <CardTitle className="line-clamp-2">{course.title}</CardTitle>
                   {course.country_names?.length > 0 && (
                     <CardDescription>

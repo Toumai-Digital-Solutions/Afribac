@@ -15,6 +15,7 @@ async function getCourses(filters: {
   search?: string
   country_id?: string
   subject_id?: string
+  topic_id?: string
   series_id?: string
   status?: string
   page?: number
@@ -34,6 +35,10 @@ async function getCourses(filters: {
 
   if (filters.subject_id) {
     query = query.eq('subject_id', filters.subject_id)
+  }
+
+  if (filters.topic_id) {
+    query = query.eq('topic_id', filters.topic_id)
   }
 
   if (filters.status) {
@@ -69,6 +74,8 @@ async function getCourses(filters: {
     subject_name: course.subject_name || 'Unknown',
     subject_color: course.subject_color || '#3B82F6',
     subject_icon: course.subject_icon || 'book',
+    topic_name: course.topic_name || null,
+    topic_slug: course.topic_slug || null,
     author_name: course.author_name || null,
     series_names: course.series_names || [],
     country_names: course.country_names || [],
@@ -85,7 +92,8 @@ async function getFilterOptions() {
   const [
     { data: countries },
     { data: subjects },
-    { data: series }
+    { data: series },
+    { data: topics }
   ] = await Promise.all([
     supabase.from('countries').select('id, name').order('name'),
     supabase.from('subjects').select('id, name, color').order('name'),
@@ -94,8 +102,15 @@ async function getFilterOptions() {
       name, 
       country_id,
       countries!inner(name)
-    `).order('name')
+    `).order('name'),
+    supabase
+      .from('topics')
+      .select('id, name, subject_id')
+      .order('position', { ascending: true })
+      .order('name', { ascending: true })
   ])
+
+  const subjectsById = new Map((subjects || []).map((subject: any) => [subject.id, subject]))
 
   return {
     countries: countries || [],
@@ -104,6 +119,12 @@ async function getFilterOptions() {
       id: s.id,
       name: s.name,
       countries: s.countries ? { name: s.countries.name } : undefined
+    })),
+    topics: (topics || []).map((topic: any) => ({
+      id: topic.id,
+      name: topic.name,
+      subject_id: topic.subject_id,
+      subject_name: subjectsById.get(topic.subject_id)?.name
     }))
   }
 }
@@ -113,13 +134,14 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
   const search = searchParams.search as string || ''
   const country_id = searchParams.country_id as string || ''
   const subject_id = searchParams.subject_id as string || ''
+  const topic_id = searchParams.topic_id as string || ''
   const series_id = searchParams.series_id as string || ''
   const status = searchParams.status as string || ''
   const page = parseInt(searchParams.page as string) || 1
 
   // Fetch data
   const [{ courses, total }, filterOptions] = await Promise.all([
-    getCourses({ search, country_id, subject_id, series_id, status, page }),
+    getCourses({ search, country_id, subject_id, topic_id, series_id, status, page }),
     getFilterOptions()
   ])
 
@@ -189,10 +211,12 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
       <CoursesFilters
         search={search}
         subject_id={subject_id}
+        topic_id={topic_id}
         country_id={country_id}
         series_id={series_id}
         status={status}
         subjects={filterOptions.subjects}
+        topics={filterOptions.topics}
         countries={filterOptions.countries}
         series={filterOptions.series}
       />

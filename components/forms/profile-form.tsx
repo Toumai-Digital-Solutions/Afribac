@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Autocomplete, AutocompleteOption } from '@/components/ui/autocomplete'
 import { Separator } from '@/components/ui/separator'
 import { 
   User, 
@@ -95,6 +95,29 @@ export function ProfileForm({ profile, countries, series, targetUserId, isEditin
 
   // Filter series by selected country
   const availableSeries = series.filter(s => s.country_id === formData.country_id)
+
+  const countryOptions: AutocompleteOption[] = countries
+    .filter((country) => Boolean(country?.id))
+    .map((country) => ({
+      value: country.id,
+      label: country.name,
+      hint: country.code,
+      leading: <Globe className="h-4 w-4 text-muted-foreground" />,
+      trailing: country.code ? (
+        <Badge variant="outline" className="font-mono text-xs">
+          {country.code}
+        </Badge>
+      ) : undefined,
+    }))
+
+  const seriesOptions: AutocompleteOption[] = availableSeries
+    .filter((serie) => Boolean(serie?.id))
+    .map((serie) => ({
+      value: serie.id,
+      label: serie.name,
+      hint: serie.description || undefined,
+      leading: <GraduationCap className="h-4 w-4 text-muted-foreground" />,
+    }))
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -492,22 +515,15 @@ export function ProfileForm({ profile, countries, series, targetUserId, isEditin
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="country">Pays</Label>
-                    <Select
-                      value={formData.country_id}
-                      onValueChange={(value) => handleInputChange('country_id', value)}
-                      disabled={profile.role === 'member'} // Members can't change their country
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionnez un pays" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {countries.map((country) => (
-                          <SelectItem key={country.id} value={country.id}>
-                            {country.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Autocomplete
+                      value={formData.country_id || null}
+                      onChange={(nextValue) => handleInputChange('country_id', nextValue)}
+                      options={countryOptions}
+                      placeholder="Sélectionnez un pays"
+                      searchPlaceholder="Rechercher un pays..."
+                      emptyText="Aucun pays trouvé"
+                      disabled={profile.role === 'member'}
+                    />
                     {profile.role === 'member' && (
                       <p className="text-xs text-muted-foreground">
                         Les collaborateurs ne peuvent pas changer de pays
@@ -518,21 +534,23 @@ export function ProfileForm({ profile, countries, series, targetUserId, isEditin
                   {profile.role === 'user' && (
                     <div className="space-y-2">
                       <Label htmlFor="series">Série</Label>
-                      <Select
-                        value={formData.series_id}
-                        onValueChange={(value) => handleInputChange('series_id', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionnez une série" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableSeries.map((serie) => (
-                            <SelectItem key={serie.id} value={serie.id}>
-                              {serie.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Autocomplete
+                        value={formData.series_id || null}
+                        onChange={(nextValue) => handleInputChange('series_id', nextValue)}
+                        options={seriesOptions}
+                        placeholder={
+                          availableSeries.length === 0
+                            ? 'Aucune série disponible'
+                            : 'Sélectionnez une série'
+                        }
+                        searchPlaceholder="Rechercher une série..."
+                        emptyText={
+                          availableSeries.length === 0
+                            ? 'Aucune série disponible pour ce pays'
+                            : 'Aucune série trouvée'
+                        }
+                        disabled={availableSeries.length === 0}
+                      />
                     </div>
                   )}
                 </div>

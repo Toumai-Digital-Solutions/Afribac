@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Autocomplete, AutocompleteOption } from '@/components/ui/autocomplete'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Subject, Series } from '@/types/database'
@@ -59,6 +60,29 @@ export function QuizExercisesFilters({
 
   const activeFiltersCount = [content_type, subject_id, series_id, status, search].filter(Boolean).length
 
+  const subjectOptions: AutocompleteOption[] = [
+    { value: 'all', label: 'Toutes les matières' },
+    ...subjects.map((subject) => ({
+      value: subject.id,
+      label: subject.name,
+      leading: (
+        <span
+          className="h-3 w-3 rounded-full"
+          style={{ backgroundColor: subject.color }}
+        />
+      ),
+    })),
+  ]
+
+  const seriesOptions: AutocompleteOption[] = [
+    { value: 'all', label: 'Toutes les séries' },
+    ...series.map((serie) => ({
+      value: serie.id,
+      label: serie.name,
+      hint: serie.countries?.name,
+    })),
+  ]
+
   return (
     <Card>
       <CardContent className="p-4">
@@ -92,42 +116,26 @@ export function QuizExercisesFilters({
 
             <div>
               <label className="text-sm font-medium mb-2 block">Matière</label>
-              <Select value={subject_id || 'all'} onValueChange={(value) => updateFilters({ subject_id: value })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Toutes les matières</SelectItem>
-                  {subjects.map((subject) => (
-                    <SelectItem key={subject.id} value={subject.id}>
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: subject.color }}
-                        />
-                        {subject.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Autocomplete
+                value={subject_id || 'all'}
+                onChange={(nextValue) => updateFilters({ subject_id: nextValue })}
+                options={subjectOptions}
+                placeholder="Toutes les matières"
+                searchPlaceholder="Rechercher une matière..."
+                emptyText="Aucune matière trouvée"
+              />
             </div>
 
             <div>
               <label className="text-sm font-medium mb-2 block">Série</label>
-              <Select value={series_id || 'all'} onValueChange={(value) => updateFilters({ series_id: value })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Toutes les séries</SelectItem>
-                  {series.map((serie) => (
-                    <SelectItem key={serie.id} value={serie.id}>
-                      {serie.name} ({serie.countries?.name})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Autocomplete
+                value={series_id || 'all'}
+                onChange={(nextValue) => updateFilters({ series_id: nextValue })}
+                options={seriesOptions}
+                placeholder="Toutes les séries"
+                searchPlaceholder="Rechercher une série..."
+                emptyText="Aucune série trouvée"
+              />
             </div>
 
             <div>

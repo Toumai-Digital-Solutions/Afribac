@@ -190,6 +190,11 @@ export default async function StudentLibraryPage({
                         {course.subject_name}
                       </Badge>
                     ) : null}
+                    {course.topic_name ? (
+                      <Badge variant="outline" className="rounded-full">
+                        {course.topic_name}
+                      </Badge>
+                    ) : null}
                     {course.series_names && course.series_names.length > 0 ? (
                       <Badge variant="outline" className="rounded-full">
                         {course.series_names[0]}

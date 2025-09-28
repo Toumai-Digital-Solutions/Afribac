@@ -172,6 +172,7 @@ export async function getAccessibleCourses() {
     .select(`
       *,
       subject:subjects(*),
+      topic:topics(*),
       tags:course_tags(
         tag:tags(*)
       ),

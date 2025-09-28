@@ -5,14 +5,8 @@ import { useCallback } from 'react'
 import { Filter, Search } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
+import { Autocomplete, AutocompleteOption } from '@/components/ui/autocomplete'
 
 interface FilterOption {
   id: string
@@ -26,13 +20,22 @@ interface SeriesOption {
   countries?: { name: string }
 }
 
+interface TopicOption {
+  id: string
+  name: string
+  subject_id: string
+  subject_name?: string
+}
+
 interface CoursesFiltersProps {
   search: string
   subject_id: string
+  topic_id: string
   country_id: string
   series_id: string
   status: string
   subjects: FilterOption[]
+  topics: TopicOption[]
   countries: FilterOption[]
   series: SeriesOption[]
 }
@@ -40,10 +43,12 @@ interface CoursesFiltersProps {
 export function CoursesFilters({
   search,
   subject_id,
+  topic_id,
   country_id,
   series_id,
   status,
   subjects,
+  topics,
   countries,
   series,
 }: CoursesFiltersProps) {
@@ -66,6 +71,66 @@ export function CoursesFilters({
     updateFilters('search', value)
   }, [updateFilters])
 
+  const availableTopics = (subject_id
+    ? topics.filter((topic) => topic.subject_id === subject_id)
+    : topics
+  )
+    .filter((topic) => Boolean(topic?.id && topic?.name))
+    .sort((a, b) => a.name.localeCompare(b.name))
+
+  const subjectOptions: AutocompleteOption[] = [
+    { value: 'all', label: 'Toutes les matières' },
+    ...subjects
+      .filter((subject) => Boolean(subject?.id))
+      .map((subject) => ({
+        value: subject.id,
+        label: subject.name,
+        leading: (
+          <span
+            className="h-3 w-3 rounded-full"
+            style={{ backgroundColor: subject.color }}
+          />
+        ),
+      }))
+  ]
+
+  const topicOptions: AutocompleteOption[] = [
+    { value: 'all', label: 'Tous les thèmes' },
+    ...availableTopics.map((topic) => ({
+      value: topic.id,
+      label: topic.name,
+      hint: subject_id ? undefined : topic.subject_name,
+    }))
+  ]
+
+  const countryOptions: AutocompleteOption[] = [
+    { value: 'all', label: 'Tous les pays' },
+    ...countries
+      .filter((country) => Boolean(country?.id))
+      .map((country) => ({
+        value: country.id,
+        label: country.name,
+      }))
+  ]
+
+  const seriesOptions: AutocompleteOption[] = [
+    { value: 'all', label: 'Toutes les séries' },
+    ...series
+      .filter((serie) => Boolean(serie?.id))
+      .map((serie) => ({
+        value: serie.id,
+        label: serie.name,
+        hint: serie.countries?.name,
+      }))
+  ]
+
+  const statusOptions: AutocompleteOption[] = [
+    { value: 'all', label: 'Tous les statuts' },
+    { value: 'draft', label: 'Brouillon' },
+    { value: 'publish', label: 'Publié' },
+    { value: 'archived', label: 'Archivé' },
+  ]
+
   return (
     <Card>
       <CardHeader>
@@ -75,7 +140,7 @@ export function CoursesFilters({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -88,72 +153,58 @@ export function CoursesFilters({
           </div>
 
           {/* Subject Filter */}
-          <Select value={subject_id || 'all'} onValueChange={(value) => updateFilters('subject_id', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Toutes les matières" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Toutes les matières</SelectItem>
-              {subjects.map((subject) => (
-                <SelectItem key={subject.id} value={subject.id}>
-                  <div className="flex items-center gap-2">
-                    <div 
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: subject.color }}
-                    />
-                    {subject.name}
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Autocomplete
+            value={subject_id || 'all'}
+            onChange={(nextValue) => updateFilters('subject_id', nextValue)}
+            options={subjectOptions}
+            placeholder="Toutes les matières"
+            searchPlaceholder="Rechercher une matière..."
+            emptyText="Aucune matière trouvée"
+          />
+
+          {/* Thème Filter */}
+          <Autocomplete
+            value={topic_id || 'all'}
+            onChange={(nextValue) => updateFilters('topic_id', nextValue)}
+            options={topicOptions}
+            placeholder={availableTopics.length === 0 ? 'Aucun thème' : 'Tous les thèmes'}
+            searchPlaceholder="Rechercher un thème..."
+            emptyText={availableTopics.length === 0 ? 'Aucun thème disponible' : 'Aucun thème trouvé'}
+          />
 
           {/* Country Filter */}
-          <Select value={country_id || 'all'} onValueChange={(value) => updateFilters('country_id', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Tous les pays" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tous les pays</SelectItem>
-              {countries.map((country) => (
-                <SelectItem key={country.id} value={country.id}>
-                  {country.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Autocomplete
+            value={country_id || 'all'}
+            onChange={(nextValue) => updateFilters('country_id', nextValue)}
+            options={countryOptions}
+            placeholder="Tous les pays"
+            searchPlaceholder="Rechercher un pays..."
+            emptyText="Aucun pays trouvé"
+          />
 
           {/* Series Filter */}
-          <Select value={series_id || 'all'} onValueChange={(value) => updateFilters('series_id', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Toutes les séries" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Toutes les séries</SelectItem>
-              {series.map((serie) => (
-                <SelectItem key={serie.id} value={serie.id}>
-                  {serie.name} ({serie.countries?.name || 'Unknown'})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Autocomplete
+            value={series_id || 'all'}
+            onChange={(nextValue) => updateFilters('series_id', nextValue)}
+            options={seriesOptions}
+            placeholder="Toutes les séries"
+            searchPlaceholder="Rechercher une série..."
+            emptyText="Aucune série trouvée"
+          />
 
           {/* Status Filter */}
-          <Select value={status || 'all'} onValueChange={(value) => updateFilters('status', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Tous les statuts" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tous les statuts</SelectItem>
-              <SelectItem value="draft">Brouillon</SelectItem>
-              <SelectItem value="publish">Publié</SelectItem>
-              <SelectItem value="archived">Archivé</SelectItem>
-            </SelectContent>
-          </Select>
+          <Autocomplete
+            value={status || 'all'}
+            onChange={(nextValue) => updateFilters('status', nextValue)}
+            options={statusOptions}
+            placeholder="Tous les statuts"
+            searchPlaceholder="Rechercher un statut..."
+            emptyText="Aucun statut trouvé"
+          />
         </div>
 
         {/* Active filters */}
-        {(search || subject_id || country_id || series_id || status) && (
+        {(search || subject_id || topic_id || country_id || series_id || status) && (
           <div className="flex flex-wrap gap-2 mt-4">
             <span className="text-sm text-muted-foreground">Filtres actifs:</span>
             {search && (
@@ -164,6 +215,11 @@ export function CoursesFilters({
             {subject_id && (
               <Badge variant="secondary">
                 Matière: {subjects.find((s) => s.id === subject_id)?.name}
+              </Badge>
+            )}
+            {topic_id && (
+              <Badge variant="secondary">
+                Thème: {topics.find((t) => t.id === topic_id)?.name}
               </Badge>
             )}
             {country_id && (

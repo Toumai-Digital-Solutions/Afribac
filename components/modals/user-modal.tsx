@@ -11,8 +11,10 @@ import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Autocomplete, AutocompleteOption } from '@/components/ui/autocomplete'
 import { Users, Save, AlertTriangle, Plus, User, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
+import { logActivity } from '@/lib/activity'
 
 interface UserModalProps {
   initialData?: {
@@ -64,6 +66,22 @@ export function UserModal({ initialData, mode = 'create', trigger, onSuccess }: 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [loadingCountries, setLoadingCountries] = useState(false)
   const [loadingSeries, setLoadingSeries] = useState(false)
+
+  const countryOptions: AutocompleteOption[] = countries
+    .filter((country) => Boolean(country?.id))
+    .map((country) => ({
+      value: country.id,
+      label: country.name,
+      hint: country.code,
+    }))
+
+  const seriesOptions: AutocompleteOption[] = series
+    .filter((serie) => Boolean(serie?.id))
+    .map((serie) => ({
+      value: serie.id,
+      label: serie.name,
+      hint: serie.description || undefined,
+    }))
 
   useEffect(() => {
     if (open) {
@@ -229,6 +247,21 @@ export function UserModal({ initialData, mode = 'create', trigger, onSuccess }: 
         : 'Utilisateur créé avec succès. Un email de réinitialisation de mot de passe a été envoyé.'
       
       toast.success(successMessage)
+
+      const savedUser = (result as any).data
+
+      await logActivity({
+        action: mode === 'edit' ? 'user:update' : 'user:create',
+        entityType: 'user',
+        entityId: savedUser?.id ?? initialData?.id ?? null,
+        entityName: formData.full_name || formData.email,
+        metadata: {
+          role: formData.role,
+          status: formData.status,
+          country_id: formData.country_id,
+          series_id: formData.series_id,
+        },
+      })
       
       setOpen(false)
       
@@ -377,22 +410,16 @@ export function UserModal({ initialData, mode = 'create', trigger, onSuccess }: 
 
               <div>
                 <Label htmlFor="country_id">Pays *</Label>
-                <Select 
-                  value={formData.country_id} 
-                  onValueChange={(value) => handleInputChange('country_id', value)}
-                  disabled={loadingCountries}
-                >
-                  <SelectTrigger className={errors.country_id ? 'border-red-500' : ''}>
-                    <SelectValue placeholder={loadingCountries ? "Chargement..." : "Sélectionnez un pays"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {countries.map((country) => (
-                      <SelectItem key={country.id} value={country.id}>
-                        {country.name} ({country.code})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Autocomplete
+                  value={formData.country_id || null}
+                  onChange={(nextValue) => handleInputChange('country_id', nextValue)}
+                  options={countryOptions}
+                  placeholder={loadingCountries ? 'Chargement...' : 'Sélectionnez un pays'}
+                  searchPlaceholder="Rechercher un pays..."
+                  emptyText="Aucun pays trouvé"
+                  loading={loadingCountries}
+                  triggerClassName={errors.country_id ? 'border-red-500 focus-visible:ring-destructive/20' : undefined}
+                />
                 {errors.country_id && (
                   <p className="text-sm text-red-600 mt-1">{errors.country_id}</p>
                 )}
@@ -401,30 +428,29 @@ export function UserModal({ initialData, mode = 'create', trigger, onSuccess }: 
               {formData.role === 'user' && (
                 <div>
                   <Label htmlFor="series_id">Série *</Label>
-                  <Select 
-                    value={formData.series_id} 
-                    onValueChange={(value) => handleInputChange('series_id', value)}
-                    disabled={!formData.country_id || loadingSeries}
-                  >
-                    <SelectTrigger className={errors.series_id ? 'border-red-500' : ''}>
-                      <SelectValue 
-                        placeholder={
-                          !formData.country_id 
-                            ? "Sélectionnez d'abord un pays"
-                            : loadingSeries 
-                            ? "Chargement..." 
-                            : "Sélectionnez une série"
-                        } 
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {series.map((serie) => (
-                        <SelectItem key={serie.id} value={serie.id}>
-                          {serie.name} {serie.description && `- ${serie.description}`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Autocomplete
+                    value={formData.series_id || null}
+                    onChange={(nextValue) => handleInputChange('series_id', nextValue)}
+                    options={seriesOptions}
+                    placeholder={
+                      !formData.country_id
+                        ? "Sélectionnez d'abord un pays"
+                        : loadingSeries
+                        ? 'Chargement...'
+                        : 'Sélectionnez une série'
+                    }
+                    searchPlaceholder="Rechercher une série..."
+                    emptyText={
+                      !formData.country_id
+                        ? 'Choisissez d’abord un pays'
+                        : seriesOptions.length <= 0
+                        ? 'Aucune série disponible pour ce pays'
+                        : 'Aucune série trouvée'
+                    }
+                    loading={loadingSeries}
+                    disabled={!formData.country_id}
+                    triggerClassName={errors.series_id ? 'border-red-500 focus-visible:ring-destructive/20' : undefined}
+                  />
                   {errors.series_id && (
                     <p className="text-sm text-red-600 mt-1">{errors.series_id}</p>
                   )}

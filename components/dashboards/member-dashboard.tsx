@@ -96,7 +96,8 @@ export function MemberDashboard({ profile }: MemberDashboardProps) {
       ] = await Promise.all([
         supabase.from('courses').select(`
           id, title, description, status, view_count, created_at, updated_at,
-          subject:subjects(name, color, icon)
+          subject:subjects(name, color, icon),
+          topic:topics(id, name)
         `).eq('created_by', profile.id).order('updated_at', { ascending: false }).limit(5),
         supabase.from('exams').select(`
           id, title, description, status, view_count, created_at, updated_at,
@@ -120,7 +121,8 @@ export function MemberDashboard({ profile }: MemberDashboardProps) {
         .from('courses')
         .select(`
           id, title, view_count, status,
-          subject:subjects(name, color)
+          subject:subjects(name, color),
+          topic:topics(id, name)
         `)
         .eq('created_by', profile.id)
         .eq('status', 'publish')

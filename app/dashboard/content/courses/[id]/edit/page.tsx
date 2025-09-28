@@ -36,7 +36,7 @@ export default async function EditCoursePage({ params }: EditCoursePageProps) {
       *,
       subject:subjects(id, name, color, icon),
       created_by_profile:profiles(full_name),
-      course_series!inner(
+      course_series(
         series_id,
         series:series(
           id,

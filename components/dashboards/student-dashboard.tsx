@@ -38,6 +38,7 @@ type ContinueCourse = {
   description: string | null
   subjectName: string
   subjectColor?: string | null
+  topicName?: string | null
   estimatedDuration: number | null
   difficultyLevel: number | null
   progress: number
@@ -52,6 +53,7 @@ type CourseHighlight = {
   description: string | null
   subjectName?: string | null
   subjectColor?: string | null
+  topicName?: string | null
   difficultyLevel?: number | null
   estimatedDuration?: number | null
   countryNames?: string[] | null
@@ -141,7 +143,8 @@ export function StudentDashboard({ profile }: StudentDashboardProps) {
               estimated_duration,
               difficulty_level,
               created_at,
-              subject:subjects(id, name, color)
+              subject:subjects(id, name, color),
+              topic:topics(id, name)
             )
           `)
           .eq('user_id', profile.id)
@@ -219,6 +222,7 @@ export function StudentDashboard({ profile }: StudentDashboardProps) {
             difficulty_level: number | null
             created_at: string
             subject: { id: string; name: string; color: string | null } | null
+            topic: { id: string; name: string } | null
           }
         }>
 
@@ -228,6 +232,7 @@ export function StudentDashboard({ profile }: StudentDashboardProps) {
           description: entry.course.description,
           subjectName: entry.course.subject?.name || 'Cours',
           subjectColor: entry.course.subject?.color,
+          topicName: entry.course.topic?.name || null,
           estimatedDuration: entry.course.estimated_duration,
           difficultyLevel: entry.course.difficulty_level,
           progress: entry.completion_percentage || 0,
@@ -242,6 +247,7 @@ export function StudentDashboard({ profile }: StudentDashboardProps) {
           description: course.description,
           subjectName: course.subject_name,
           subjectColor: course.subject_color,
+          topicName: course.topic_name,
           difficultyLevel: course.difficulty_level,
           estimatedDuration: course.estimated_duration,
           countryNames: course.country_names,
@@ -366,6 +372,7 @@ export function StudentDashboard({ profile }: StudentDashboardProps) {
           description: course.description,
           subjectName: course.subject_name,
           subjectColor: course.subject_color,
+          topicName: course.topic_name,
           difficultyLevel: course.difficulty_level,
           estimatedDuration: course.estimated_duration,
           countryNames: course.country_names,
@@ -537,6 +544,11 @@ export function StudentDashboard({ profile }: StudentDashboardProps) {
                           >
                             {course.subjectName}
                           </div>
+                          {course.topicName && (
+                            <Badge variant="outline" className="text-[11px]">
+                              {course.topicName}
+                            </Badge>
+                          )}
                           <span>Dernière activité {formatDistanceToNow(new Date(course.lastAccessed), { locale: fr, addSuffix: true })}</span>
                         </div>
                         <h3 className="text-lg font-semibold">{course.title}</h3>
@@ -689,6 +701,11 @@ export function StudentDashboard({ profile }: StudentDashboardProps) {
                             {course.subjectName}
                           </div>
                         ) : null}
+                        {course.topicName && (
+                          <Badge variant="outline" className="mt-2 text-[11px]">
+                            {course.topicName}
+                          </Badge>
+                        )}
                         <h3 className="mt-3 text-base font-semibold leading-snug">
                           {course.title}
                         </h3>
@@ -850,6 +867,9 @@ export function StudentDashboard({ profile }: StudentDashboardProps) {
                                   <h4 className="font-semibold">{course.title}</h4>
                                   {course.subjectName ? (
                                     <p className="text-xs text-muted-foreground">{course.subjectName}</p>
+                                  ) : null}
+                                  {course.topicName ? (
+                                    <p className="text-xs text-muted-foreground mt-0.5">Thème : {course.topicName}</p>
                                   ) : null}
                                 </div>
                                 <ArrowRight className="h-4 w-4 text-muted-foreground" />

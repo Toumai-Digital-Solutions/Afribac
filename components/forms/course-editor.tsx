@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { ArrowLeft, Save, Eye, Upload, Clock, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
+import { ArrowLeft, Save, Eye, Upload, Clock, CheckCircle, AlertCircle, Loader2, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -23,10 +23,36 @@ import RichTextEditor from '@/components/editors/rich-text-editor'
 import { MultiSelect, Option } from '@/components/ui/multi-select'
 import { FileUpload } from './file-upload'
 import { createClient } from '@/lib/supabase/client'
+import { Autocomplete, AutocompleteOption } from '@/components/ui/autocomplete'
+import { logActivity } from '@/lib/activity'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog'
 // import { useAutoSave } from '@/hooks/use-auto-save' // Disabled temporarily
-import { Course, Subject, Series, Tag, Country } from '@/types/database'
+import { Course, Subject, Series, Tag, Country, Topic } from '@/types/database'
 import { formatDistanceToNow } from 'date-fns'
 import { fr } from 'date-fns/locale'
+
+const slugifyTopicName = (value: string) => {
+  const base = value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/-{2,}/g, '-')
+
+  if (base.length === 0) {
+    return `topic-${Date.now()}`
+  }
+
+  return base.slice(0, 60)
+}
 
 interface CourseEditorProps {
   mode: 'create' | 'edit'
@@ -38,6 +64,7 @@ interface FormData {
   description: string
   content: string
   subject_id: string
+  topic_id: string
   difficulty_level: number
   estimated_duration: number
   status: 'draft' | 'publish' | 'archived'
@@ -55,6 +82,7 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
     description: initialData?.description || '',
     content: initialData?.content || '',
     subject_id: initialData?.subject_id || '',
+    topic_id: initialData?.topic_id || '',
     difficulty_level: initialData?.difficulty_level || 1,
     estimated_duration: initialData?.estimated_duration || 30,
     status: initialData?.status || 'draft',
@@ -68,11 +96,18 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [series, setSeries] = useState<(Series & { countries: Country })[]>([])
   const [tags, setTags] = useState<Tag[]>([])
+  const [topics, setTopics] = useState<Topic[]>([])
   const [countries, setCountries] = useState<Country[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [isTopicDialogOpen, setIsTopicDialogOpen] = useState(false)
+  const [newTopicName, setNewTopicName] = useState('')
+  const [newTopicDescription, setNewTopicDescription] = useState('')
+  const [newTopicSeriesId, setNewTopicSeriesId] = useState<string>('none')
+  const [creatingTopic, setCreatingTopic] = useState(false)
+  const [topicDialogError, setTopicDialogError] = useState<string | null>(null)
 
   // Auto-save disabled temporarily
   // const { isSaving, lastSaved, forceSave, saveStatus } = useAutoSave({
@@ -101,6 +136,7 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
         { data: subjectsData },
         { data: seriesData },
         { data: tagsData },
+        { data: topicsData },
         { data: countriesData },
         userRes,
       ] = await Promise.all([
@@ -110,6 +146,11 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
           countries(*)
         `).order('name'),
         supabase.from('tags').select('*').order('name'),
+        supabase
+          .from('topics')
+          .select('*')
+          .order('position', { ascending: true })
+          .order('name', { ascending: true }),
         supabase.from('countries').select('*').order('name'),
         supabase.auth.getUser(),
       ])
@@ -117,6 +158,7 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
       setSubjects(subjectsData || [])
       setSeries(seriesData || [])
       setTags(tagsData || [])
+      setTopics(topicsData || [])
       setCountries(countriesData || [])
       setCurrentUserId(userRes.data.user?.id ?? null)
     } catch (error) {
@@ -174,6 +216,24 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
     return Object.keys(newErrors).length === 0
   }
 
+  useEffect(() => {
+    if (!formData.subject_id) {
+      return
+    }
+
+    if (topics.length === 0) {
+      return
+    }
+
+    const topicMatchesSubject = topics.some(
+      topic => topic.id === formData.topic_id && topic.subject_id === formData.subject_id
+    )
+
+    if (!topicMatchesSubject) {
+      setFormData(prev => ({ ...prev, topic_id: '' }))
+    }
+  }, [formData.subject_id, formData.topic_id, topics])
+
   const handleSubmit = async (status: 'draft' | 'publish' = 'draft') => {
     if (!validateForm()) return
 
@@ -187,6 +247,7 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
         description: formData.description || null,
         content: formData.content || null,
         subject_id: formData.subject_id,
+        topic_id: formData.topic_id || null,
         difficulty_level: formData.difficulty_level,
         estimated_duration: formData.estimated_duration,
         status,
@@ -228,6 +289,20 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
           ? `Cours ${status === 'publish' ? 'publié' : 'sauvegardé'} avec succès`
           : `Cours ${status === 'publish' ? 'créé et publié' : 'créé'} avec succès`
       )
+
+      await logActivity({
+        action: mode === 'edit' ? 'course:update' : 'course:create',
+        entityType: 'course',
+        entityId: courseId,
+        entityName: courseData.title,
+        metadata: {
+          status,
+          subject_id: formData.subject_id,
+          topic_id: formData.topic_id || null,
+          series_ids: formData.series_ids,
+          tag_ids: formData.tag_ids,
+        },
+      })
 
       router.push('/dashboard/content/courses')
     } catch (error) {
@@ -305,21 +380,173 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
   }
 
   // Prepare options for multi-select
-  const seriesOptions: Option[] = series.map(serie => ({
-    label: `${serie.name} (${serie.countries?.name})`,
-    value: serie.id,
-    group: serie.countries?.name
-  }))
+  const seriesOptions: Option[] = series
+    .filter(serie => Boolean(serie.id))
+    .map(serie => ({
+      label: `${serie.name} (${serie.countries?.name})`,
+      value: serie.id,
+      group: serie.countries?.name
+    }))
 
-  const tagOptions: Option[] = tags.map(tag => ({
-    label: tag.name,
-    value: tag.id,
-    color: tag.color,
-    group: tag.type === 'chapter' ? 'Chapitres' : 
-           tag.type === 'difficulty' ? 'Difficulté' :
-           tag.type === 'exam_type' ? 'Type d\'examen' :
-           tag.type === 'school' ? 'Écoles' : 'Sujets'
-  }))
+  const seriesAutocompleteOptions: AutocompleteOption[] = series
+    .filter(serie => Boolean(serie.id))
+    .map(serie => ({
+      value: serie.id,
+      label: serie.name,
+      hint: serie.countries?.name,
+    }))
+
+  const subjectOptions: AutocompleteOption[] = subjects
+    .filter(subject => Boolean(subject.id))
+    .map(subject => ({
+      value: subject.id,
+      label: subject.name,
+      leading: (
+        <span
+          className="h-3 w-3 rounded-full"
+          style={{ backgroundColor: subject.color }}
+        />
+      ),
+      searchKeywords: subject.description ? [subject.description] : undefined,
+    }))
+
+  const tagOptions: Option[] = tags
+    .filter(tag => Boolean(tag.id))
+    .map(tag => ({
+      label: tag.name,
+      value: tag.id,
+      color: tag.color,
+      group: tag.type === 'chapter' ? 'Chapitres' :
+             tag.type === 'difficulty' ? 'Difficulté' :
+             tag.type === 'exam_type' ? 'Type d\'examen' :
+             tag.type === 'school' ? 'Écoles' : 'Sujets'
+    }))
+
+  const topicsForSubject = formData.subject_id
+    ? topics
+        .filter(topic => topic.subject_id === formData.subject_id)
+        .filter(topic => Boolean(topic?.id && topic?.name))
+        .sort((a, b) => (a.position - b.position) || a.name.localeCompare(b.name))
+    : []
+
+  const topicOptions: AutocompleteOption[] = [
+    {
+      value: 'none',
+      label: 'Aucun thème',
+      hint: 'Ne pas associer de thème',
+    },
+    ...topicsForSubject.map(topic => ({
+      value: topic.id,
+      label: topic.name,
+      hint: topic.description || undefined,
+    }))
+  ]
+
+  const selectedTopic = topics.find(topic => topic.id === formData.topic_id) || null
+
+  const resetTopicDialog = useCallback(() => {
+    setNewTopicName('')
+    setNewTopicDescription('')
+    setNewTopicSeriesId('none')
+    setTopicDialogError(null)
+    setCreatingTopic(false)
+  }, [])
+
+  const handleTopicDialogOpenChange = (open: boolean) => {
+    if (!open) {
+      resetTopicDialog()
+    }
+    setIsTopicDialogOpen(open)
+  }
+
+  const openTopicDialog = () => {
+    if (!formData.subject_id) {
+      toast.error('Sélectionnez une matière avant de créer un thème')
+      return
+    }
+
+    resetTopicDialog()
+    setIsTopicDialogOpen(true)
+  }
+
+  const handleCreateTopic = async () => {
+    if (!formData.subject_id) {
+      setTopicDialogError('Choisissez une matière pour associer ce thème')
+      return
+    }
+
+    const trimmedName = newTopicName.trim()
+
+    if (!trimmedName) {
+      setTopicDialogError('Le nom du thème est requis')
+      return
+    }
+
+    setTopicDialogError(null)
+    setCreatingTopic(true)
+
+    try {
+      const supabase = createClient()
+      const subjectTopics = topics.filter(topic => topic.subject_id === formData.subject_id)
+      const nextPosition = subjectTopics.length
+        ? Math.max(...subjectTopics.map(topic => topic.position ?? 0)) + 1
+        : 0
+
+      const baseSlug = slugifyTopicName(trimmedName)
+      let slug = baseSlug
+      let counter = 1
+      const existingSlugs = new Set(subjectTopics.map(topic => topic.slug))
+
+      while (existingSlugs.has(slug)) {
+        slug = `${baseSlug}-${counter++}`
+      }
+
+      const { data, error } = await supabase
+        .from('topics')
+        .insert({
+          subject_id: formData.subject_id,
+          series_id: newTopicSeriesId !== 'none' ? newTopicSeriesId : null,
+          name: trimmedName,
+          slug,
+          description: newTopicDescription.trim() || null,
+          position: nextPosition,
+          created_by: currentUserId || null
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      if (data) {
+        setTopics(prev => [...prev, data].sort((a, b) => (a.position - b.position) || a.name.localeCompare(b.name)))
+        setFormData(prev => ({ ...prev, topic_id: data.id }))
+        toast.success('Thème créé avec succès')
+        setIsTopicDialogOpen(false)
+        resetTopicDialog()
+
+        await logActivity({
+          action: 'topic:create',
+          entityType: 'topic',
+          entityId: data.id,
+          entityName: data.name,
+          metadata: {
+            subject_id: data.subject_id,
+            series_id: data.series_id,
+          },
+        })
+      }
+    } catch (error: any) {
+      console.error('Error creating topic:', error)
+      const message = error?.message || ''
+      if (typeof message === 'string' && message.includes('topics_subject_id_slug_key')) {
+        setTopicDialogError('Un thème portant ce nom existe déjà pour cette matière.')
+      } else {
+        setTopicDialogError(message || 'Erreur lors de la création du thème')
+      }
+    } finally {
+      setCreatingTopic(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -474,32 +701,49 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
               <CardTitle>Paramètres</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="subject">Matière principale *</Label>
-                <Select 
-                  value={formData.subject_id} 
-                  onValueChange={handleChange('subject_id')}
-                >
-                  <SelectTrigger className={errors.subject_id ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Choisir une matière" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {subjects.map((subject) => (
-                      <SelectItem key={subject.id} value={subject.id}>
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: subject.color }}
-                          />
-                          {subject.name}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.subject_id && (
-                  <p className="text-sm text-red-500 mt-1">{errors.subject_id}</p>
-                )}
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="subject">Matière principale *</Label>
+                  <Autocomplete
+                    value={formData.subject_id || null}
+                    onChange={(nextValue) => handleChange('subject_id')(nextValue)}
+                    options={subjectOptions}
+                    placeholder="Choisir une matière"
+                    searchPlaceholder="Rechercher une matière..."
+                    emptyText="Aucune matière trouvée"
+                    triggerClassName={errors.subject_id ? 'border-red-500 focus-visible:ring-destructive/20' : undefined}
+                  />
+                  {errors.subject_id && (
+                    <p className="text-sm text-red-500 mt-1">{errors.subject_id}</p>
+                  )}
+                </div>
+
+                <div>
+                <Label htmlFor="topic">Thème</Label>
+                  <Autocomplete
+                    value={formData.topic_id ? formData.topic_id : 'none'}
+                    onChange={(nextValue) => handleChange('topic_id')(nextValue === 'none' ? '' : nextValue)}
+                    options={topicOptions}
+                    placeholder={topicsForSubject.length === 0 ? 'Aucun thème disponible pour cette matière' : 'Sélectionnez un thème'}
+                    searchPlaceholder="Rechercher un thème..."
+                    emptyText={topicsForSubject.length === 0 ? 'Aucun thème disponible' : 'Aucun thème trouvé'}
+                  />
+                  {selectedTopic?.description && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {selectedTopic.description}
+                    </p>
+                  )}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="mt-2"
+                    onClick={openTopicDialog}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Créer un thème
+                  </Button>
+                </div>
               </div>
 
               <div>
@@ -573,6 +817,66 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
           </Card>
         </div>
       </div>
+
+      <Dialog open={isTopicDialogOpen} onOpenChange={handleTopicDialogOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Créer un nouveau thème</DialogTitle>
+            <DialogDescription>
+              Associez un nouveau thème à la matière sélectionnée pour organiser vos cours.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="new-topic-name">Nom du thème *</Label>
+              <Input
+                id="new-topic-name"
+                value={newTopicName}
+                onChange={(event) => setNewTopicName(event.target.value)}
+                placeholder="Exemple : Trigonométrie"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="new-topic-description">Description</Label>
+              <Textarea
+                id="new-topic-description"
+                value={newTopicDescription}
+                onChange={(event) => setNewTopicDescription(event.target.value)}
+                placeholder="Informations supplémentaires (optionnel)"
+                rows={3}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="new-topic-series">Série (optionnel)</Label>
+              <Autocomplete
+                value={newTopicSeriesId}
+                onChange={(nextValue) => setNewTopicSeriesId(nextValue)}
+                options={[{ value: 'none', label: 'Toutes les séries', hint: 'Disponible pour toutes les séries' }, ...seriesAutocompleteOptions]}
+                placeholder="Toutes les séries"
+                searchPlaceholder="Rechercher une série..."
+                emptyText="Aucune série trouvée"
+              />
+            </div>
+
+            {topicDialogError && (
+              <p className="text-sm text-red-500">{topicDialogError}</p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => handleTopicDialogOpenChange(false)}>
+              Annuler
+            </Button>
+            <Button type="button" onClick={handleCreateTopic} disabled={creatingTopic}>
+              {creatingTopic && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Créer le thème
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

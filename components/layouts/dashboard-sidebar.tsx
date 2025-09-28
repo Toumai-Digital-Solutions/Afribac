@@ -22,6 +22,7 @@ import {
   FileText,
   Globe,
   GraduationCap,
+  History,
   Images,
   Menu,
   Play,
@@ -111,6 +112,12 @@ export const navigationItems: NavItem[] = [
         title: 'Utilisateurs',
         href: '/dashboard/admin/users',
         icon: Users,
+        roles: ['admin']
+      },
+      {
+        title: "Journal d'activité",
+        href: '/dashboard/admin/activity',
+        icon: History,
         roles: ['admin']
       }
     ]

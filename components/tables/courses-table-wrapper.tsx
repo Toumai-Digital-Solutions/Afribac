@@ -12,6 +12,9 @@ interface Course {
   subject_name: string
   subject_color: string
   subject_icon: string
+  topic_id?: string | null
+  topic_name?: string | null
+  topic_slug?: string | null
   difficulty_level: number
   estimated_duration: number
   status: 'draft' | 'publish' | 'archived'

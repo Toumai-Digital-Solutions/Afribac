@@ -29,6 +29,8 @@ interface Course {
   subject_name: string
   subject_color: string
   subject_icon: string
+  topic_id?: string | null
+  topic_name?: string | null
   difficulty_level: number
   estimated_duration: number
   status: 'draft' | 'publish' | 'archived'
@@ -87,6 +89,13 @@ const columns: ColumnDef<Course>[] = [
               <span> • Par {row.original.author_name}</span>
             )}
           </div>
+          {row.original.topic_name && (
+            <div className="mt-1 text-[11px] text-muted-foreground">
+              <Badge variant="outline" className="text-[11px]">
+                {row.original.topic_name}
+              </Badge>
+            </div>
+          )}
           {row.original.description && (
             <p className="text-xs text-muted-foreground mt-1 line-clamp-2" title={row.original.description}>
               {row.original.description}

@@ -7,6 +7,47 @@ export type QuestionType = 'multiple_choice' | 'true_false' | 'open_ended'
 export interface Database {
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          id: string
+          actor_id: string
+          actor_role: string | null
+          action_type: string
+          entity_type: string
+          entity_id: string | null
+          entity_name: string | null
+          status: string | null
+          note: string | null
+          metadata: any
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          actor_id?: string
+          actor_role?: string | null
+          action_type: string
+          entity_type: string
+          entity_id?: string | null
+          entity_name?: string | null
+          status?: string | null
+          note?: string | null
+          metadata?: any
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          actor_id?: string
+          actor_role?: string | null
+          action_type?: string
+          entity_type?: string
+          entity_id?: string | null
+          entity_name?: string | null
+          status?: string | null
+          note?: string | null
+          metadata?: any
+          created_at?: string
+        }
+      }
       countries: {
         Row: {
           id: string
@@ -165,6 +206,7 @@ export interface Database {
           pdf_filename: string | null
           video_url: string | null
           subject_id: string
+          topic_id: string | null
           difficulty_level: number
           estimated_duration: number
           status: CourseStatus
@@ -182,6 +224,7 @@ export interface Database {
           pdf_filename?: string | null
           video_url?: string | null
           subject_id: string
+          topic_id?: string | null
           difficulty_level?: number
           estimated_duration?: number
           status?: CourseStatus
@@ -199,10 +242,52 @@ export interface Database {
           pdf_filename?: string | null
           video_url?: string | null
           subject_id?: string
+          topic_id?: string | null
           difficulty_level?: number
           estimated_duration?: number
           status?: CourseStatus
           view_count?: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      topics: {
+        Row: {
+          id: string
+          subject_id: string
+          series_id: string | null
+          name: string
+          slug: string
+          description: string | null
+          position: number
+          metadata: any
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          subject_id: string
+          series_id?: string | null
+          name: string
+          slug: string
+          description?: string | null
+          position?: number
+          metadata?: any
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          subject_id?: string
+          series_id?: string | null
+          name?: string
+          slug?: string
+          description?: string | null
+          position?: number
+          metadata?: any
           created_by?: string | null
           created_at?: string
           updated_at?: string
@@ -673,7 +758,23 @@ export interface Database {
       }
     }
     Views: {
-      [_ in never]: never
+      activity_log_details: {
+        Row: {
+          id: string
+          actor_id: string
+          actor_role: string | null
+          action_type: string
+          entity_type: string
+          entity_id: string | null
+          entity_name: string | null
+          status: string | null
+          note: string | null
+          metadata: any
+          created_at: string
+          actor_name: string | null
+          actor_email: string | null
+        }
+      }
     }
     Functions: {
       [_ in never]: never
@@ -696,6 +797,8 @@ export type Exam = Database['public']['Tables']['exams']['Row']
 export type ExamTag = Database['public']['Tables']['exam_tags']['Row']
 export type ExamAttempt = Database['public']['Tables']['exam_attempts']['Row']
 export type UserProgress = Database['public']['Tables']['user_progress']['Row']
+export type ActivityLog = Database['public']['Tables']['activity_logs']['Row']
+export type ActivityLogDetail = Database['public']['Views']['activity_log_details']['Row']
 
 // Extended types with relations
 export type SeriesWithCountry = Series & {
@@ -704,6 +807,7 @@ export type SeriesWithCountry = Series & {
 
 export type CourseWithDetails = Course & {
   subject: Subject
+  topic: Topic | null
   tags: Tag[]
   series: Series[]
   created_by_profile: Profile | null
@@ -711,10 +815,13 @@ export type CourseWithDetails = Course & {
 
 export type CourseWithFullDetails = Course & {
   subject: Subject
+  topic: Topic | null
   tags: Tag[]
   series: (Series & { country: Country })[]
   created_by_profile: Profile | null
 }
+
+export type Topic = Database['public']['Tables']['topics']['Row']
 
 export type ExamWithDetails = Exam & {
   subject: Subject
