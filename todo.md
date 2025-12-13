@@ -21,16 +21,17 @@ Last updated: 2025-12-13
 ## Stage 1 — MVP (launchable, coherent, end-to-end)
 
 ### 1) Documentation & local setup (unblock shipping)
-- [ ] [ ] Replace root `README.md` with Afribac docs (run, env vars, Supabase setup, migrations, seed)
-- [ ] [ ] Add `docs/LOCAL_SETUP.md` (Supabase project + required env vars + basic troubleshooting)
-- [ ] [ ] Add `docs/DEPLOYMENT.md` (Vercel env vars + Supabase prod checklist)
+- [x] [ ] Replace root `README.md` with Afribac docs (run, env vars, Supabase setup, migrations, seed)
+- [x] [ ] Add `docs/LOCAL_SETUP.md` (Supabase project + required env vars + basic troubleshooting)
+- [x] [ ] Add `docs/DEPLOYMENT.md` (Vercel env vars + Supabase prod checklist)
 
 ### 2) Make the app surface coherent (remove duplicate “old” flows)
-- [ ] [ ] Choose canonical surfaces: keep `/dashboard` as the entry for all roles
-- [ ] [ ] Redirect or remove legacy pages:
-  - [ ] [ ] `/student/*` → `/dashboard` (or keep only non-duplicate pages)
-  - [ ] [ ] `/member/*` → `/dashboard` (or keep only non-duplicate pages)
-- [ ] [ ] Remove console logs in auth/dashboards (`use-auth`, legacy dashboards) and standardize redirects
+- [x] [ ] Choose canonical surfaces: keep `/dashboard` as the entry for all roles
+- [x] [ ] Redirect legacy dashboards:
+  - [x] [ ] `/student/dashboard` → `/dashboard` (keep `/student/*` feature pages for now)
+  - [x] [ ] `/member/*` → `/dashboard`
+  - [x] [ ] `/admin/*` → `/dashboard`
+- [x] [ ] Remove console logs in auth/dashboards (`use-auth`, legacy dashboards) and standardize redirects
 
 ### 3) Fix missing / stubbed API routes
 - [ ] [ ] Decide: implement or delete `app/api/extract-pdf/` (currently directory without route)
