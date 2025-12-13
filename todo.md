@@ -1,287 +1,105 @@
-# 🚀 Afribac MVP Development Todo
+# 🚀 Afribac — Todo (re-scoped from codebase analysis)
 
-## 📋 Current Status
-- ✅ ✅ Next.js 15+ project setup with App Router
-- ✅ ✅ Tailwind CSS + Shadcn/ui components
-- ✅ ✅ Supabase client configuration
-- ✅ ✅ Basic UI components library
-- ✅ ✅ Bun package manager setup
+Last updated: 2025-12-13
 
----
+## ✅ Checkbox Legend
+- **First checkbox** 🤖 **Implementation** (coded)
+- **Second checkbox** 👤 **Testing** (you validated it works end-to-end)
 
-## 🎯 Phase 1: Foundation & Database Setup (Week 1-2)
-
-### 🗃️ Database Schema
-- [x] [x] Create countries table with seed data (SN, CI, ML, etc.)
-- [x] [x] Create series table (S1, S2, L, ES) per country
-- [x] [x] Create subjects table (Mathématiques, Physique, etc.)
-- [x] [x] Create series_subjects association table
-- [x] [x] Create profiles table extending Supabase auth.users
-- [x] [x] Create courses table with PDF support
-- [x] [x] Create tags table for content organization
-- [x] [x] Create course_tags association table
-- [x] [x] Set up Supabase Storage bucket for PDFs
-- [x] [x] Configure RLS policies for country-based filtering
-
-### 🔐 Authentication & Authorization
-- [x] [ ] Implement profile creation on user registration
-- [x] [ ] Create role-based middleware (student/member/admin)
-- [x] [ ] Add country selection during registration
-- [x] [ ] Add series selection for students
-- [x] [ ] Create protected route guards
-- [x] [ ] Test authentication flows end-to-end
-
-### 🎨 Core Layout & Navigation
-- [x] [ ] Create main layout with role-based navigation
-- [x] [ ] Design responsive sidebar navigation
-- [x] [ ] Implement user profile dropdown
-- [ ] [ ] Create breadcrumb navigation system
-- [x] [ ] Add theme toggle (dark/light mode)
-- [x] [ ] Design mobile-responsive header
+## 📌 What’s already implemented in the codebase (baseline)
+- [x] [ ] Next.js 15 App Router + Tailwind + shadcn/ui foundation
+- [x] [ ] Supabase SSR client + middleware session refresh + auth callback
+- [x] [ ] Database schema + RLS (countries/series/subjects/courses/exams/quizzes/progress/attempts)
+- [x] [ ] Role model: `admin` / `member` / `user` (student)
+- [x] [ ] `/dashboard` role routing + onboarding gates (name + location/series)
+- [x] [ ] Admin area under `/dashboard/admin/*` (countries/series/subjects/users + overview)
+- [x] [ ] Content management under `/dashboard/content/*` (courses/exams/quiz + filters)
+- [x] [ ] Upload endpoint `/api/upload` (image uploads + role checks)
 
 ---
 
-## 📚 Phase 2: Content Management System (Week 3-4)
+## Stage 1 — MVP (launchable, coherent, end-to-end)
 
-### 👨‍💼 Admin Features
-- [ ] [ ] Create admin dashboard with global metrics
-- [ ] [ ] Build countries management page (CRUD)
-- [ ] [ ] Build series management per country
-- [ ] [ ] Build subjects management and assignment
-- [ ] [ ] Create user management interface
-- [ ] [ ] Implement member assignment to countries
-- [ ] [ ] Add bulk operations for data management
+### 1) Documentation & local setup (unblock shipping)
+- [ ] [ ] Replace root `README.md` with Afribac docs (run, env vars, Supabase setup, migrations, seed)
+- [ ] [ ] Add `docs/LOCAL_SETUP.md` (Supabase project + required env vars + basic troubleshooting)
+- [ ] [ ] Add `docs/DEPLOYMENT.md` (Vercel env vars + Supabase prod checklist)
 
-### 📖 Course Management
-- [ ] [ ] Create course creation/editing form
-- [ ] [ ] Implement PDF upload with preview
-- [ ] [ ] Add rich text editor for course content
-- [ ] [ ] Create course listing with filters
-- [ ] [ ] Implement course tagging system
-- [ ] [ ] Add course publication controls
-- [ ] [ ] Create course preview functionality
+### 2) Make the app surface coherent (remove duplicate “old” flows)
+- [ ] [ ] Choose canonical surfaces: keep `/dashboard` as the entry for all roles
+- [ ] [ ] Redirect or remove legacy pages:
+  - [ ] [ ] `/student/*` → `/dashboard` (or keep only non-duplicate pages)
+  - [ ] [ ] `/member/*` → `/dashboard` (or keep only non-duplicate pages)
+- [ ] [ ] Remove console logs in auth/dashboards (`use-auth`, legacy dashboards) and standardize redirects
 
-### 🏷️ Content Organization
-- [ ] [ ] Implement tag management system
-- [ ] [ ] Create subject-based course categorization
-- [ ] [ ] Add difficulty level indicators
-- [ ] [ ] Implement course prerequisites system
-- [ ] [ ] Create content approval workflow
+### 3) Fix missing / stubbed API routes
+- [ ] [ ] Decide: implement or delete `app/api/extract-pdf/` (currently directory without route)
+- [ ] [ ] Decide: implement or delete `app/api/admin/users/` (currently directory without route)
 
----
+### 4) Student core loop (must work end-to-end)
+- [ ] [ ] Course detail page (open a course, show content + PDF/video if present)
+- [ ] [ ] PDF viewing experience is smooth (loading, error states, mobile)
+- [ ] [ ] Progress updates:
+  - [ ] [ ] create/update `user_progress` on open/leave/complete
+  - [ ] [ ] track time spent + last accessed
+- [ ] [ ] Student library experience:
+  - [ ] [ ] browse courses (filtered by country/series via RLS)
+  - [ ] [ ] browse exams
 
-## 🎓 Phase 3: Student Learning Experience (Week 5-6)
+### 5) Member core loop (create → publish → students consume)
+- [ ] [ ] Course editor “happy path” works:
+  - [ ] [ ] create/edit content
+  - [ ] [ ] upload course materials to `course-materials` bucket (PDF)
+  - [ ] [ ] publish/unpublish (status changes)
+- [ ] [ ] Exam creation “happy path” works (questions/correction PDFs or rich content)
+- [ ] [ ] Quiz/exercise creation “happy path” works (questions + options)
 
-### 📊 Student Dashboard
-- [ ] [ ] Create student dashboard with personalized content
-- [ ] [ ] Show recent courses and progress
-- [ ] [ ] Display recommended courses
-- [ ] [ ] Add quick access to favorite subjects
-- [ ] [ ] Implement learning streak tracking
+### 6) Quiz & exam attempts (student assessment)
+- [ ] [ ] Quiz taking flow:
+  - [ ] [ ] start attempt → answer → submit → score → store in `quiz_attempts` + `user_answers`
+- [ ] [ ] Exam simulation attempts:
+  - [ ] [ ] start attempt → autosave answers → submit → store in `exam_attempts`
+- [ ] [ ] Results screen (at least score + corrections access)
 
-### 🔍 Course Discovery
-- [ ] [ ] Build advanced course search with filters
-- [ ] [ ] Implement country/series automatic filtering
-- [ ] [ ] Add search by subject, difficulty, tags
-- [ ] [ ] Create course recommendation engine
-- [ ] [ ] Add recently viewed courses section
+### 7) Admin operations (minimum for real operations)
+- [ ] [ ] Replace “manual” admin setup with documented steps (create admin user, seed)
+- [ ] [ ] Add minimal activity logging coverage for key actions (create/edit/publish/delete)
 
-### 📱 Course Viewing Experience
-- [ ] [ ] Create course detail page layout
-- [ ] [ ] Implement integrated PDF viewer
-- [ ] [ ] Add reading progress tracking
-- [ ] [ ] Create bookmark/favorites system
-- [ ] [ ] Add course navigation (next/previous)
-- [ ] [ ] Implement "Mark as Complete" functionality
-
----
-
-## 🧩 Phase 4: Quiz & Assessment System (Week 7-8)
-
-### ❓ Quiz Infrastructure
-- [ ] [ ] Create quiz database tables
-- [ ] [ ] Design quiz creation interface (member/admin)
-- [ ] [ ] Implement multiple choice questions
-- [ ] [ ] Add true/false questions
-- [ ] [ ] Support for open-ended questions
-- [ ] [ ] Create question bank management
-
-### 🎮 Interactive Quiz Experience
-- [ ] [ ] Build quiz-taking interface
-- [ ] [ ] Implement timer functionality
-- [ ] [ ] Add progress indicators
-- [ ] [ ] Create immediate feedback system
-- [ ] [ ] Show correct answers after completion
-- [ ] [ ] Implement quiz retry logic with attempt limits
-
-### 📈 Quiz Analytics
-- [ ] [ ] Track quiz attempts and scores
-- [ ] [ ] Create quiz performance dashboard
-- [ ] [ ] Identify difficult questions for review
-- [ ] [ ] Generate student progress reports
+### 8) MVP deployment readiness
+- [ ] [ ] Verify RLS with 3 test users (admin/member/user) across 2 countries
+- [ ] [ ] Error monitoring (basic) + production env var checklist
+- [ ] [ ] Smoke test script/checklist (signup → onboarding → dashboard → consume content)
 
 ---
 
-## 📊 Phase 5: Progress Tracking & Analytics (Week 9-10)
+## Stage 2 — Full Version (scale + differentiation)
 
-### 📈 Student Progress
-- [ ] [ ] Create user_progress tracking table
-- [ ] [ ] Implement course completion tracking
-- [ ] [ ] Add time spent analytics
-- [ ] [ ] Create personal statistics dashboard
-- [ ] [ ] Build learning goals system
-- [ ] [ ] Add achievement badges
+### A) “Unique Afribac” learning features
+- [ ] [ ] Adaptive revision planner (based on series + weak topics + exam date)
+- [ ] [ ] Mastery map per subject/topic (strength/weakness visualization)
+- [ ] [ ] Spaced repetition queue for missed quiz questions (daily review)
 
-### 🎯 Member Analytics (Country-specific)
-- [ ] [ ] Create member dashboard with local metrics
-- [ ] [ ] Show student performance by series
-- [ ] [ ] Track course engagement in their country
-- [ ] [ ] Identify struggling students
-- [ ] [ ] Create content performance analytics
+### B) Africa-first distribution & accessibility
+- [ ] [ ] Low-bandwidth mode (lite pages, aggressive caching, PDF-first)
+- [ ] [ ] Offline support for saved lessons/quizzes (where feasible)
+- [ ] [ ] WhatsApp/SMS companion (reminders + micro-quizzes)
 
-### 🌍 Admin Analytics (Global)
-- [ ] [ ] Build global admin dashboard
-- [ ] [ ] Create cross-country performance comparisons
-- [ ] [ ] Track platform usage statistics
-- [ ] [ ] Monitor content creation trends
-- [ ] [ ] Generate executive summary reports
+### C) Content quality & trust at scale
+- [ ] [ ] Editorial workflow (draft → review → publish) + reviewer assignment
+- [ ] [ ] Contributor reputation + impact dashboard (students helped, completions)
+- [ ] [ ] Content quality signals (ratings, completion, difficulty calibration)
 
----
+### D) Analytics that drive outcomes
+- [ ] [ ] Student insights: topic mastery, time distribution, improvement trends
+- [ ] [ ] Member insights: content impact per cohort/series/country
+- [ ] [ ] Admin insights: cross-country comparisons, growth funnels, retention
 
-## 🎭 Phase 6: Exam Simulations (Week 11-12)
+### E) Community & engagement
+- [ ] [ ] Discussions/Q&A per course/topic (moderation + anti-spam)
+- [ ] [ ] Study groups per country/series + weekly challenges
+- [ ] [ ] Notifications (in-app + email), preferences
 
-### 📝 Simulation System
-- [ ] [ ] Create exam_simulations table
-- [ ] [ ] Build simulation creation interface
-- [ ] [ ] Implement timed exam mode
-- [ ] [ ] Add full-screen exam interface
-- [ ] [ ] Create auto-save functionality
-- [ ] [ ] Implement simulation scoring system
+### F) Monetization (if desired)
+- [ ] [ ] Subscription plans (free/paid) + entitlements
+- [ ] [ ] Paywalls by feature/content category
 
-### 🏆 Results & Feedback
-- [ ] [ ] Design simulation results page
-- [ ] [ ] Show detailed score breakdown by subject
-- [ ] [ ] Create performance comparison with peers
-- [ ] [ ] Add improvement recommendations
-- [ ] [ ] Generate printable result certificates
-
----
-
-## 🔧 Phase 7: Performance & Polish (Week 13-14)
-
-### ⚡ Performance Optimization
-- [ ] [ ] Implement proper caching strategies
-- [ ] [ ] Optimize database queries
-- [ ] [ ] Add image optimization
-- [ ] [ ] Implement lazy loading for courses
-- [ ] [ ] Add search indexing for better performance
-
-### 🐛 Testing & Bug Fixes
-- [ ] [ ] Write unit tests for core functions
-- [ ] [ ] Test all user flows end-to-end
-- [ ] [ ] Validate RLS policies thoroughly
-- [ ] [ ] Test cross-country data isolation
-- [ ] [ ] Performance testing with large datasets
-
-### 🚀 Deployment Preparation
-- [ ] [ ] Configure production environment variables
-- [ ] [ ] Set up Vercel deployment
-- [ ] [ ] Configure domain and SSL
-- [ ] [ ] Set up error monitoring (Sentry)
-- [ ] [ ] Create deployment documentation
-
----
-
-## 🎁 Phase 8: Additional Features (Week 15-16)
-
-### 📱 User Experience Enhancements
-- [ ] [ ] Add keyboard shortcuts
-- [ ] [ ] Implement drag-and-drop for file uploads
-- [ ] [ ] Create offline mode indicators
-- [ ] [ ] Add loading skeletons everywhere
-- [ ] [ ] Implement optimistic UI updates
-
-### 🔔 Notification System
-- [ ] [ ] Set up email notifications
-- [ ] [ ] Add in-app notifications
-- [ ] [ ] Create notification preferences
-- [ ] [ ] Implement quiz reminders
-- [ ] [ ] Add course update notifications
-
-### 📚 Content Enhancements
-- [ ] [ ] Add video support for courses
-- [ ] [ ] Implement course comments/discussions
-- [ ] [ ] Create course rating system
-- [ ] [ ] Add course sharing functionality
-- [ ] [ ] Support for multiple languages (FR/EN)
-
----
-
-## 🚨 Critical Immediate Next Steps
-
-### 1. Database Setup (THIS WEEK)
-- [x] [ ] Run Supabase migrations
-- [x] [ ] Seed initial data (countries, series, subjects)
-- [x] [ ] Test RLS policies
-- [x] [ ] Create admin user
-
-### 2. Authentication Flow (THIS WEEK)  
-- [x] [ ] Complete user registration with profile creation
-- [x] [ ] Add country/series selection in signup
-- [x] [ ] Test role-based redirects
-- [x] [ ] Verify country filtering works
-
-### 3. Basic Content Flow (NEXT WEEK)
-- [ ] [ ] Create first course as admin
-- [ ] [ ] Test course visibility by country
-- [ ] [ ] Verify student can view filtered content
-- [ ] [ ] Test member content management
-
----
-
-## 📝 Development Notes
-
-### ✅ Checkbox Legend
-- **First checkbox** 🤖 **AI Implementation** - Marks when feature is coded/implemented
-- **Second checkbox** 👤 **User Testing** - Marks when feature is tested and confirmed working
-
-### 📋 Usage Instructions
-1. **AI marks first checkbox** when implementing a feature
-2. **User marks second checkbox** after testing and confirming it works
-3. **Both checked = Feature complete** and ready for production
-
-### 🆕 Recent Schema Updates
-- ✅ **User status**: Changed from `is_active` boolean to `status` enum (active/suspended/deleted)
-- ✅ **Course status**: Added `status` field (draft/publish/archived) replacing `is_published`
-- ✅ **Video support**: Added `video_url` field to courses table
-- ✅ **School tags**: Added 'school' type to tags (Lycée Technique, Lycée Général, etc.)
-- ✅ **Status components**: Created reusable status badge components
-- ✅ **Country isolation**: Users only see their own country (not all countries)
-- ✅ **Member collaboration**: Members can edit ANY course from their country
-
-### 🎯 Key Success Criteria
-- All users automatically see only content from their country
-- Role-based access works seamlessly
-- PDF viewing experience is smooth
-- Quiz system is engaging and functional
-- Analytics provide actionable insights
-
-### 🔄 Testing Strategy
-- Test with multiple countries (SN, CI, ML)
-- Verify data isolation between countries
-- Test all role transitions (user → member → admin)
-- Validate RLS policies prevent data leaks
-- Test mobile responsiveness
-
-### 📊 Performance Targets
-- Page load times < 2s
-- PDF loading < 3s
-- Quiz interactions < 500ms
-- Search results < 1s
-- Support 1000+ concurrent users
-
----
-
-*Last updated: $(date)*
-*Total estimated development time: 16 weeks*
-*Core MVP ready: Week 12*

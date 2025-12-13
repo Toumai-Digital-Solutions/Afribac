@@ -17,7 +17,6 @@ export function useAuth() {
   const loadProfile = async (user: User | null) => {
     if (user) {
       const userProfile = await getCurrentUserProfile()
-      console.log('userProfile', userProfile)
       setProfile(userProfile)
     } else {
       setProfile(null)

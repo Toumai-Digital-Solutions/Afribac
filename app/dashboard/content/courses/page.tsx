@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BookOpen } from 'lucide-react'
 
 interface CoursesPageProps {
-  searchParams: { [key: string]: string | string[] | undefined }
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
 // Course query function with filters
@@ -22,7 +22,7 @@ async function getCourses(filters: {
   limit?: number
 }) {
   const supabase = await createClient()
-  
+
   // Use enriched view that already aggregates relationships for filtering
   let query = supabase
     .from('searchable_courses')
@@ -129,7 +129,8 @@ async function getFilterOptions() {
   }
 }
 
-export default async function CoursesPage({ searchParams }: CoursesPageProps) {
+export default async function CoursesPage(props: CoursesPageProps) {
+  const searchParams = await props.searchParams
   // Extract search params
   const search = searchParams.search as string || ''
   const country_id = searchParams.country_id as string || ''
@@ -169,7 +170,7 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
             <div className="text-2xl font-bold">{total}</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Publiés</CardTitle>

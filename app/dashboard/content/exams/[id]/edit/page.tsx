@@ -3,17 +3,18 @@ import { createClient } from '@/lib/supabase/server'
 import { ExamEditor } from '@/components/forms/exam-editor'
 
 interface EditExamPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
-export default async function EditExamPage({ params }: EditExamPageProps) {
+export default async function EditExamPage(props: EditExamPageProps) {
+  const params = await props.params
   const supabase = await createClient()
-  
+
   // Check if user is authenticated
   const { data: { user }, error: authError } = await supabase.auth.getUser()
-  
+
   if (authError || !user) {
     redirect('/auth/signin')
   }
@@ -66,7 +67,7 @@ export default async function EditExamPage({ params }: EditExamPageProps) {
           Modifiez "{exam.title}".
         </p>
       </div>
-      
+
       <ExamEditor mode="edit" initialData={exam} />
     </div>
   )

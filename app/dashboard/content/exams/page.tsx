@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
 interface ExamsPageProps {
-  searchParams: { [key: string]: string | string[] | undefined }
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
 // Exam query function with filters
@@ -21,7 +21,7 @@ async function getExams(filters: {
   limit?: number
 }) {
   const supabase = await createClient()
-  
+
   let query = supabase
     .from('exam_details')
     .select('*', { count: 'exact' })
@@ -100,7 +100,8 @@ const examTypeLabels = {
   'other': 'Autre'
 }
 
-export default async function ExamsPage({ searchParams }: ExamsPageProps) {
+export default async function ExamsPage(props: ExamsPageProps) {
+  const searchParams = await props.searchParams
   // Extract search params
   const search = searchParams.search as string || ''
   const subject_id = searchParams.subject_id as string || ''
@@ -125,7 +126,7 @@ export default async function ExamsPage({ searchParams }: ExamsPageProps) {
             Créez et gérez les examens avec questions et corrections
           </p>
         </div>
-        
+
         <Link href="/dashboard/content/exams/new">
           <Button>
             <Plus className="mr-2 h-4 w-4" />
@@ -145,7 +146,7 @@ export default async function ExamsPage({ searchParams }: ExamsPageProps) {
             <div className="text-2xl font-bold">{total}</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Baccalauréat</CardTitle>

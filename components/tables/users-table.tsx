@@ -13,7 +13,7 @@ interface User {
   email: string
   full_name: string | null
   role: 'user' | 'member' | 'admin'
-  country_id: string
+  country_id: string | null
   series_id: string | null
   avatar_url: string | null
   phone: string | null
@@ -25,7 +25,7 @@ interface User {
     id: string
     name: string
     code: string
-  }
+  } | null
   series?: {
     id: string
     name: string
@@ -44,26 +44,26 @@ interface User {
 const getRoleConfig = (role: string) => {
   switch (role) {
     case 'admin':
-      return { 
-        label: 'Administrateur', 
+      return {
+        label: 'Administrateur',
         variant: 'destructive' as const,
         icon: <Users className="h-3 w-3" />
       }
     case 'member':
-      return { 
-        label: 'Membre', 
+      return {
+        label: 'Membre',
         variant: 'default' as const,
         icon: <Users className="h-3 w-3" />
       }
     case 'user':
-      return { 
-        label: 'Étudiant', 
+      return {
+        label: 'Étudiant',
         variant: 'secondary' as const,
         icon: <GraduationCap className="h-3 w-3" />
       }
     default:
-      return { 
-        label: role, 
+      return {
+        label: role,
         variant: 'outline' as const,
         icon: <Users className="h-3 w-3" />
       }
@@ -73,26 +73,26 @@ const getRoleConfig = (role: string) => {
 const getStatusConfig = (status: string) => {
   switch (status) {
     case 'active':
-      return { 
-        label: 'Actif', 
+      return {
+        label: 'Actif',
         variant: 'default' as const,
         className: 'bg-green-100 text-green-800 border-green-200'
       }
     case 'suspended':
-      return { 
-        label: 'Suspendu', 
+      return {
+        label: 'Suspendu',
         variant: 'destructive' as const,
         className: 'bg-red-100 text-red-800 border-red-200'
       }
     case 'deleted':
-      return { 
-        label: 'Supprimé', 
+      return {
+        label: 'Supprimé',
         variant: 'outline' as const,
         className: 'bg-gray-100 text-gray-600 border-gray-200'
       }
     default:
-      return { 
-        label: status, 
+      return {
+        label: status,
         variant: 'outline' as const,
         className: ''
       }
@@ -106,7 +106,7 @@ const columns: ColumnDef<User>[] = [
     cell: ({ row }) => {
       const user = row.original
       const roleConfig = getRoleConfig(user.role)
-      
+
       return (
         <div className="flex items-center gap-3">
           <div className="flex-shrink-0 h-8 w-8 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white text-sm font-medium">
@@ -134,17 +134,29 @@ const columns: ColumnDef<User>[] = [
   {
     accessorKey: 'country_id',
     header: 'Pays',
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2">
-        <Globe className="h-4 w-4 text-blue-600" />
-        <div>
-          <span className="font-medium">{row.original.country.name}</span>
-          <Badge variant="outline" className="ml-2 text-xs">
-            {row.original.country.code}
-          </Badge>
+    cell: ({ row }) => {
+      const country = row.original.country
+
+      if (!country) {
+        return (
+          <span className="text-gray-400 text-sm italic">
+            Non défini
+          </span>
+        )
+      }
+
+      return (
+        <div className="flex items-center gap-2">
+          <Globe className="h-4 w-4 text-blue-600" />
+          <div>
+            <span className="font-medium">{country.name}</span>
+            <Badge variant="outline" className="ml-2 text-xs">
+              {country.code}
+            </Badge>
+          </div>
         </div>
-      </div>
-    ),
+      )
+    },
     filterFn: (row, id, value) => {
       return row.getValue(id) === value
     },
@@ -240,11 +252,11 @@ interface UsersTableProps {
   currentSearchFilter?: string
 }
 
-export function UsersTable({ 
-  data, 
+export function UsersTable({
+  data,
   roleOptions = [],
   countryOptions = [],
-  serverFiltered = false, 
+  serverFiltered = false,
   currentRoleFilter,
   currentCountryFilter,
   currentSearchFilter
