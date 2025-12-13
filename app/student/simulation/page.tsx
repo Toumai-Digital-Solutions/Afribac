@@ -181,10 +181,10 @@ export default async function StudentSimulationPage() {
                     {exam.total_points ? <span>{exam.total_points} pts</span> : null}
                   </div>
                   <Link
-                    href={`/student/exams?q=${encodeURIComponent(exam.subject_name ?? '')}`}
+                    href={`/student/simulation/${exam.id}`}
                     className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary"
                   >
-                    Utiliser ce sujet
+                    Lancer la simulation
                     <ArrowRight className="h-3 w-3" />
                   </Link>
                 </div>

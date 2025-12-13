@@ -102,13 +102,6 @@ export function QuizPlayer({ quiz, onComplete }: QuizPlayerProps) {
     })
   }
 
-  const handleTrueFalse = (questionId: string, value: 'true' | 'false') => {
-    updateAnswer(questionId, {
-      selectedOptions: [value],
-      isAnswered: true
-    })
-  }
-
   const handleShortAnswer = (questionId: string, text: string) => {
     updateAnswer(questionId, {
       textAnswer: text,
@@ -398,16 +391,16 @@ export function QuizPlayer({ quiz, onComplete }: QuizPlayerProps) {
             {currentQuestion.question_type === 'true_false' && (
               <RadioGroup
                 value={userAnswers[currentQuestion.id]?.selectedOptions[0] || ''}
-                onValueChange={(value) => handleTrueFalse(currentQuestion.id, value as 'true' | 'false')}
+                onValueChange={(value) => handleSingleChoice(currentQuestion.id, value)}
               >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="true" id="true" />
-                  <Label htmlFor="true" className="cursor-pointer">Vrai</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="false" id="false" />
-                  <Label htmlFor="false" className="cursor-pointer">Faux</Label>
-                </div>
+                {currentQuestion.answer_options?.map((option) => (
+                  <div key={option.id} className="flex items-center space-x-2">
+                    <RadioGroupItem value={option.id} id={option.id} />
+                    <Label htmlFor={option.id} className="flex-1 cursor-pointer">
+                      {option.option_text}
+                    </Label>
+                  </div>
+                ))}
               </RadioGroup>
             )}
 

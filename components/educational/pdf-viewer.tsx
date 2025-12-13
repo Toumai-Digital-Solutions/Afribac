@@ -1,17 +1,20 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { 
   Download, 
   ZoomIn, 
   ZoomOut, 
   RotateCw, 
   Maximize2, 
+  Minimize2,
   FileText,
   ChevronLeft,
   ChevronRight,
   Bookmark,
-  BookmarkCheck
+  BookmarkCheck,
+  Loader2,
+  AlertTriangle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,6 +26,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { cn } from "@/lib/utils"
 
 interface PDFViewerProps {
   pdfUrl: string
@@ -36,22 +40,33 @@ interface PDFViewerProps {
 export function PDFViewer({ 
   pdfUrl, 
   title,
-  totalPages = 24,
+  totalPages: totalPagesProp,
   onBookmark,
   bookmarks = [],
   onProgress
 }: PDFViewerProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const [zoom, setZoom] = useState(100)
-  const [rotation, setRotation] = useState(0)
+  const [rotation, setRotation] = useState(0) // degrees
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [isBookmarked, setIsBookmarked] = useState(bookmarks.includes(currentPage))
+  const [numPages, setNumPages] = useState<number>(totalPagesProp ?? 0)
+  const [loadingPdf, setLoadingPdf] = useState(true)
+  const [rendering, setRendering] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const pdfRef = useRef<any>(null)
+  const renderTaskRef = useRef<any>(null)
+  const [containerWidth, setContainerWidth] = useState<number>(0)
 
   const handlePageChange = (newPage: number) => {
-    if (newPage >= 1 && newPage <= totalPages) {
+    const maxPages = totalPagesProp ?? numPages ?? 0
+    if (newPage >= 1 && newPage <= maxPages) {
       setCurrentPage(newPage)
       setIsBookmarked(bookmarks.includes(newPage))
-      onProgress?.(newPage, totalPages)
+      onProgress?.(newPage, maxPages)
     }
   }
 
@@ -71,11 +86,125 @@ export function PDFViewer({
     link.click()
   }
 
+  const totalPages = totalPagesProp ?? numPages ?? 1
   const progressPercentage = (currentPage / totalPages) * 100
+
+  useEffect(() => {
+    setIsBookmarked(bookmarks.includes(currentPage))
+  }, [bookmarks, currentPage])
+
+  useEffect(() => {
+    if (!containerRef.current) return
+    const el = containerRef.current
+    const ro = new ResizeObserver(() => {
+      setContainerWidth(el.clientWidth)
+    })
+    ro.observe(el)
+    setContainerWidth(el.clientWidth)
+    return () => ro.disconnect()
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      setLoadingPdf(true)
+      setError(null)
+      try {
+        const pdfjs = await import("pdfjs-dist")
+        pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+          "pdfjs-dist/build/pdf.worker.min.mjs",
+          import.meta.url
+        ).toString()
+
+        const loadingTask = pdfjs.getDocument({ url: pdfUrl })
+        const pdf = await loadingTask.promise
+        if (cancelled) return
+        pdfRef.current = pdf
+        setNumPages(pdf.numPages || 1)
+        setCurrentPage(1)
+      } catch (e: any) {
+        if (cancelled) return
+        setError("Impossible de charger le PDF. Vérifiez le lien et les permissions (CORS).")
+      } finally {
+        if (!cancelled) setLoadingPdf(false)
+      }
+    }
+
+    if (pdfUrl) load()
+    return () => {
+      cancelled = true
+      try {
+        renderTaskRef.current?.cancel?.()
+      } catch {}
+      pdfRef.current = null
+    }
+  }, [pdfUrl])
+
+  const rotationValue = useMemo(() => rotation, [rotation])
+
+  useEffect(() => {
+    const render = async () => {
+      const pdf = pdfRef.current
+      const canvas = canvasRef.current
+      const container = containerRef.current
+      if (!pdf || !canvas || !container) return
+      if (loadingPdf || error) return
+
+      try {
+        setRendering(true)
+
+        // Cancel previous render if any
+        try {
+          renderTaskRef.current?.cancel?.()
+        } catch {}
+
+        const page = await pdf.getPage(currentPage)
+        // Base viewport at scale 1 for sizing
+        const baseViewport = page.getViewport({ scale: 1, rotation: rotationValue })
+
+        const padding = 32 // viewer padding (p-4)
+        const availableWidth = Math.max(containerWidth - padding, 200)
+        const fitScale = availableWidth / baseViewport.width
+        const finalScale = fitScale * (zoom / 100)
+
+        const viewport = page.getViewport({ scale: finalScale, rotation: rotationValue })
+
+        const ctx = canvas.getContext("2d")
+        if (!ctx) return
+
+        // HiDPI support
+        const dpr = window.devicePixelRatio || 1
+        canvas.width = Math.floor(viewport.width * dpr)
+        canvas.height = Math.floor(viewport.height * dpr)
+        canvas.style.width = `${Math.floor(viewport.width)}px`
+        canvas.style.height = `${Math.floor(viewport.height)}px`
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+
+        const task = page.render({ canvasContext: ctx, viewport } as any)
+        renderTaskRef.current = task
+        await task.promise
+      } catch (e: any) {
+        // ignore cancellation
+      } finally {
+        setRendering(false)
+      }
+    }
+
+    render()
+  }, [currentPage, zoom, rotationValue, containerWidth, loadingPdf, error])
+
+  useEffect(() => {
+    if (!isFullscreen) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsFullscreen(false)
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [isFullscreen])
 
   return (
     <TooltipProvider>
-      <div className={`flex flex-col bg-card rounded-xl border ${isFullscreen ? 'fixed inset-0 z-50' : 'h-[600px]'}`}>
+      <div className={cn("flex flex-col bg-card rounded-xl border", isFullscreen ? "fixed inset-0 z-50" : "h-[600px]")}>
         {/* Header Controls */}
         <div className="flex items-center justify-between p-4 border-b bg-muted/30">
           <div className="flex items-center gap-3">
@@ -117,7 +246,7 @@ export function PDFViewer({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" onClick={() => setIsFullscreen(!isFullscreen)}>
-                  <Maximize2 className="h-4 w-4" />
+                  {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Mode plein écran</TooltipContent>
@@ -190,47 +319,33 @@ export function PDFViewer({
         </div>
 
         {/* PDF Display Area */}
-        <div className="flex-1 overflow-auto bg-muted/10 p-4">
-          <div 
-            className="mx-auto bg-white shadow-lg"
-            style={{
-              transform: `scale(${zoom / 100}) rotate(${rotation}deg)`,
-              transformOrigin: 'top center',
-              width: '595px', // A4 width
-              minHeight: '842px', // A4 height
-            }}
-          >
-            {/* Placeholder for actual PDF content */}
-            <div className="w-full h-full border border-border rounded p-8 bg-white">
-              <div className="space-y-4">
-                <div className="h-6 bg-muted rounded animate-pulse" />
-                <div className="space-y-2">
-                  <div className="h-4 bg-muted/60 rounded animate-pulse" />
-                  <div className="h-4 bg-muted/60 rounded animate-pulse w-5/6" />
-                  <div className="h-4 bg-muted/60 rounded animate-pulse w-4/6" />
-                </div>
-                <div className="h-32 bg-muted/30 rounded animate-pulse" />
-                <div className="space-y-2">
-                  {[1, 2, 3, 4, 5, 6, 7].map(i => (
-                    <div key={i} className="h-4 bg-muted/40 rounded animate-pulse" />
-                  ))}
-                </div>
-              </div>
-              
-              {/* Actual PDF would be embedded here */}
-              <div className="absolute inset-0 flex items-center justify-center bg-black/5 rounded">
-                <div className="text-center">
-                  <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">
-                    Contenu PDF - Page {currentPage}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {title}
-                  </p>
-                </div>
+        <div ref={containerRef} className="flex-1 overflow-auto bg-muted/10 p-4">
+          {loadingPdf ? (
+            <div className="h-full w-full flex items-center justify-center text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                Chargement du PDF...
               </div>
             </div>
-          </div>
+          ) : error ? (
+            <div className="h-full w-full flex items-center justify-center">
+              <div className="max-w-md text-center space-y-2">
+                <AlertTriangle className="h-10 w-10 mx-auto text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">{error}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="mx-auto w-fit">
+              <div className="relative rounded-lg border bg-white shadow-sm">
+                <canvas ref={canvasRef} className="block rounded-lg" />
+                {rendering && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/70 rounded-lg">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Bookmarks Sidebar */}

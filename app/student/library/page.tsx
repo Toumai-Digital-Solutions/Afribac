@@ -222,9 +222,11 @@ export default async function StudentLibraryPage({
                       <span>Mots-clés : {course.tag_names.slice(0, 3).join(', ')}{course.tag_names.length > 3 ? '…' : ''}</span>
                     ) : null}
                   </div>
-                  <Button variant="outline" className="w-full rounded-2xl text-sm">
-                    Ouvrir le cours
-                  </Button>
+                  <Link href={`/student/courses/${course.id}`} className="block">
+                    <Button variant="outline" className="w-full rounded-2xl text-sm">
+                      Ouvrir le cours
+                    </Button>
+                  </Link>
                 </CardContent>
               </Card>
             ))}
@@ -292,12 +294,16 @@ export default async function StudentLibraryPage({
                     {exam.total_points ? <span>Points : {exam.total_points}</span> : null}
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <Button size="sm" className="flex-1 rounded-2xl text-xs">
-                      Consulter le sujet
-                    </Button>
-                    <Button size="sm" variant="outline" className="flex-1 rounded-2xl text-xs">
-                      Voir la correction
-                    </Button>
+                    <Link href={`/student/exams/${exam.id}`} className="flex-1">
+                      <Button size="sm" className="w-full rounded-2xl text-xs">
+                        Consulter le sujet
+                      </Button>
+                    </Link>
+                    <Link href={`/student/exams/${exam.id}?tab=correction`} className="flex-1">
+                      <Button size="sm" variant="outline" className="w-full rounded-2xl text-xs">
+                        Voir la correction
+                      </Button>
+                    </Link>
                   </div>
                 </CardContent>
               </Card>

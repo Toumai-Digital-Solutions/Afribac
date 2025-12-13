@@ -40,6 +40,45 @@ export async function middleware(request: NextRequest) {
     return Response.redirect(url)
   }
 
+  // If user is authenticated but account is suspended/deleted, block protected routes
+  if (user && isProtectedRoute && !pathname.startsWith('/auth')) {
+    try {
+      // Dynamically import to avoid edge bundling issues if any
+      const { createServerClient } = await import('@supabase/ssr')
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+      if (supabaseUrl && supabaseKey) {
+        const supabase = createServerClient(supabaseUrl, supabaseKey, {
+          cookies: {
+            getAll() {
+              return request.cookies.getAll()
+            },
+            setAll(cookiesToSet) {
+              cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+            },
+          }
+        })
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('status')
+          .eq('id', user.id)
+          .maybeSingle()
+
+        const status = (profile as any)?.status as string | undefined
+        if (status === 'suspended' || status === 'deleted') {
+          const url = request.nextUrl.clone()
+          url.pathname = '/auth/account-disabled'
+          url.searchParams.set('status', status)
+          return Response.redirect(url)
+        }
+      }
+    } catch {
+      // fail-open: don't block if middleware lookup fails
+    }
+  }
+
   return supabaseResponse
 }
 

@@ -189,12 +189,16 @@ export default async function StudentExamsPage({
                     ) : null}
                   </div>
                   <div className="flex flex-col gap-2 text-sm">
-                    <Button className="w-full rounded-2xl text-sm">
-                      Consulter le sujet
-                    </Button>
-                    <Button variant="outline" className="w-full rounded-2xl text-sm">
-                      Voir la correction
-                    </Button>
+                    <Link href={`/student/exams/${exam.id}`} className="block">
+                      <Button className="w-full rounded-2xl text-sm">
+                        Consulter le sujet
+                      </Button>
+                    </Link>
+                    <Link href={`/student/exams/${exam.id}?tab=correction`} className="block">
+                      <Button variant="outline" className="w-full rounded-2xl text-sm">
+                        Voir la correction
+                      </Button>
+                    </Link>
                   </div>
                 </CardContent>
               </Card>

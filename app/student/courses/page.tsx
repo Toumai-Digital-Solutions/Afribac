@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -94,7 +95,8 @@ export default async function StudentCoursesPage() {
             const difficulty = formatDifficulty(course.difficulty_level)
 
             return (
-              <Card key={course.id} className="flex flex-col">
+              <Link key={course.id} href={`/student/courses/${course.id}`} className="block">
+                <Card className="flex flex-col hover:shadow-md transition-shadow">
                 <CardHeader className="space-y-2">
                   <div className="flex items-center justify-between gap-2">
                     <Badge variant="outline">{course.subject_name}</Badge>
@@ -138,7 +140,8 @@ export default async function StudentCoursesPage() {
                     </p>
                   )}
                 </CardContent>
-              </Card>
+                </Card>
+              </Link>
             )
           })}
         </div>

@@ -33,15 +33,13 @@ import {
   Link as LinkIcon,
   Image as ImageIcon,
   Table as TableIcon,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  AlignJustify,
   Pi,
   Images,
   Wand2,
   FileCode,
-  FileUp
+  FileUp,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { GalleryPickerDialog } from '@/components/gallery/gallery-picker-dialog'
@@ -97,6 +95,7 @@ const RichTextEditor = ({
   const [mode, setMode] = useState<'visual' | 'code'>('visual')
   const [codeContent, setCodeContent] = useState('')
   const [isExtractingPdf, setIsExtractingPdf] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   // Update ref when onChange changes
   useEffect(() => {
@@ -214,6 +213,46 @@ const RichTextEditor = ({
   const htmlPreview = useMemo(() => sanitizeHtmlSnippet(htmlSnippet), [htmlSnippet, sanitizeHtmlSnippet])
   const canInsertHtml = useMemo(() => Boolean(htmlPreview.trim()), [htmlPreview])
 
+  const formatHtmlSnippet = useCallback((raw: string) => {
+    const trimmed = raw.trim()
+    if (!trimmed) return ''
+    if (typeof window === 'undefined' || typeof window.DOMParser === 'undefined') return trimmed
+
+    try {
+      const parser = new DOMParser()
+      const doc = parser.parseFromString(`<div>${trimmed}</div>`, 'text/html')
+      const root = doc.body.firstElementChild
+      if (!root) return trimmed
+
+      const formatNode = (node: Node, indent = 0): string => {
+        const pad = '  '.repeat(indent)
+        if (node.nodeType === Node.TEXT_NODE) {
+          const text = (node.textContent || '').replace(/\s+/g, ' ').trim()
+          return text ? pad + text : ''
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) return ''
+        const el = node as HTMLElement
+        const tag = el.tagName.toLowerCase()
+        const attrs = Array.from(el.attributes)
+          .map((a) => `${a.name}="${a.value}"`)
+          .join(' ')
+        const open = attrs ? `<${tag} ${attrs}>` : `<${tag}>`
+        const children = Array.from(el.childNodes)
+          .map((child) => formatNode(child, indent + 1))
+          .filter(Boolean)
+        if (children.length === 0) return `${pad}${open}</${tag}>`
+        return [`${pad}${open}`, ...children, `${pad}</${tag}>`].join('\n')
+      }
+
+      return Array.from(root.childNodes)
+        .map((n) => formatNode(n, 0))
+        .filter(Boolean)
+        .join('\n')
+    } catch {
+      return trimmed
+    }
+  }, [])
+
   const handleInsertHtml = useCallback(() => {
     if (!editor) return
     const sanitized = sanitizeHtmlSnippet(htmlSnippet)
@@ -233,6 +272,34 @@ const RichTextEditor = ({
     setHtmlSnippet('<p>Contenu HTML</p>')
   }, [editor, htmlSnippet, sanitizeHtmlSnippet, mode, codeContent])
 
+  useEffect(() => {
+    if (!isFullscreen) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsFullscreen(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [isFullscreen])
+
+  const extractTextFromPdfPage = useCallback(async (page: any) => {
+    const textContent = await page.getTextContent()
+    const items = (textContent.items || []) as Array<{ str: string; transform?: number[] }>
+    const lines: Array<{ y: number; parts: string[] }> = []
+    const tolerance = 2.5
+
+    for (const item of items) {
+      const str = (item.str || '').trim()
+      if (!str) continue
+      const y = item.transform?.[5] ?? 0
+      const existing = lines.find((l) => Math.abs(l.y - y) <= tolerance)
+      if (existing) existing.parts.push(str)
+      else lines.push({ y, parts: [str] })
+    }
+
+    lines.sort((a, b) => b.y - a.y)
+    return lines.map((l) => l.parts.join(' ')).join('\n').trim()
+  }, [])
+
   const handlePdfUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return // editor might be null in code mode, so we remove that check
@@ -240,37 +307,54 @@ const RichTextEditor = ({
     setIsExtractingPdf(true)
     try {
       const pdfJS = await import('pdfjs-dist')
-      pdfJS.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfJS.version}/build/pdf.worker.min.mjs`
+      // Avoid remote worker (offline/prod-safe): use bundled worker.
+      pdfJS.GlobalWorkerOptions.workerSrc = new URL(
+        'pdfjs-dist/build/pdf.worker.min.mjs',
+        import.meta.url
+      ).toString()
 
       const arrayBuffer = await file.arrayBuffer()
       const pdf = await pdfJS.getDocument({ data: arrayBuffer }).promise
 
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i)
-        const viewport = page.getViewport({ scale: 1.5 })
-        const canvas = document.createElement('canvas')
-        const context = canvas.getContext('2d')
+        // Prefer text extraction first (works for selectable-text PDFs)
+        const extractedText = await extractTextFromPdfPage(page)
+        const hasText = extractedText.length >= 40
 
-        if (!context) continue
+        let extractedHtml = ''
 
-        canvas.height = viewport.height
-        canvas.width = viewport.width
+        if (hasText) {
+          const paragraphs = extractedText
+            .split('\n')
+            .map((line) => line.trim())
+            .filter(Boolean)
+            .map((line) => `<p>${line.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>`)
+          extractedHtml = paragraphs.join('')
+        } else {
+          // Fallback: OCR/AI extraction for scanned PDFs (requires /api/extract-pdf configured)
+          const viewport = page.getViewport({ scale: 2 })
+          const canvas = document.createElement('canvas')
+          const context = canvas.getContext('2d')
+          if (!context) continue
 
-        await page.render({ canvasContext: context, viewport, canvas } as any).promise
+          canvas.height = viewport.height
+          canvas.width = viewport.width
 
-        const base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1]
+          await page.render({ canvasContext: context, viewport, canvas } as any).promise
+          const base64Image = canvas.toDataURL('image/png').split(',')[1]
 
-        try {
           const response = await fetch('/api/extract-pdf', {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ images: [base64Image] }),
           })
 
           if (!response.ok) throw new Error('Extraction failed')
 
-          let pageText = ''
           const reader = response.body?.getReader()
           const decoder = new TextDecoder()
+          let pageText = ''
 
           if (reader) {
             while (true) {
@@ -280,49 +364,23 @@ const RichTextEditor = ({
             }
           }
 
-          if (pageText.trim()) {
-            const newContent = '\n\n' + pageText + '\n\n<hr>\n\n'
+          extractedHtml = pageText.trim()
+        }
 
-            if (mode === 'visual' && editor) {
-              editor.chain().focus('end').insertContent(newContent).run()
-              migrateMathStrings(editor)
-            } else {
-              // In code mode, we assume the AI returns Markdown.
-              // Since we are in HTML mode, sticking Markdown into HTML text area might be weird 
-              // UNLESS the API returns HTML.
-              // Currently API returns Markdown (system prompt says "Transcribe... into clean Markdown").
-              // Tiptap handles Markdown-in-HTML insertion gracefully via `insertContent`, but 
-              // dumping Markdown into an HTML textarea (codeContent) is raw.
-              // However, user asked for "HTML Mode".
-              // If we paste Markdown into the HTML code, it will just render as text when switched back to visual,
-              // NOT as formatted elements.
-              // Strategy: We should probably convert the Markdown to HTML before appending in Code Mode?
-              // Or simpler: Just append it. When they switch back to Visual, Tiptap *might* parse it if we use setContent?
-              // Actually Tiptap's setContent supports info like markdown if properly configured, but setContent(html) usually expects HTML.
-              // Let's rely on Tiptap to parse it. 
-              // Ideally we should use Tiptap instance even in background to convert.
-              // But `editor` is available.
-              // Let's assume for now we append it and let the user format or see mixed content.
-              // Wait, inserting Markdown into HTML source is bad practice.
-              // Better approach: temporarily use the editor instance to converting.
-              if (editor) {
-                // Even if in code mode, we can use the editor instance to parse markdown? 
-                // No, standard Tiptap doesn't have "markdownToHtml" exposed easily without the plugin.
-                // Let's just append it. The user will see markdown syntax in their HTML. 
-                // When they switch to Visual, `setContent` will treat it as text string mostly.
-                // Actually, if we use `parseOptions: { preserveWhitespace: 'full' }`...
-                // Let's accept that in Code Mode, it appends raw text.
-                // Actually the user explicitly asked for "HTML mode".
-                // Let's update `setCodeContent` by appending.
-                setCodeContent(prev => prev + newContent)
-                // Also update parent
-                onChangeRef.current(codeContent + newContent)
-              }
-            }
-          }
+        if (!extractedHtml) continue
 
-        } catch (error) {
-          console.error(`Error extracting page ${i}:`, error)
+        const pageHeader = `<h3>Page ${i}</h3>`
+        const pageBlock = `${pageHeader}${extractedHtml}<hr />`
+
+        if (mode === 'visual' && editor) {
+          editor.chain().focus('end').insertContent(pageBlock).run()
+          migrateMathStrings(editor)
+        } else {
+          setCodeContent((prev) => {
+            const next = `${prev}\n${pageBlock}\n`
+            onChangeRef.current(next)
+            return next
+          })
         }
       }
 
@@ -333,7 +391,7 @@ const RichTextEditor = ({
       setIsExtractingPdf(false)
       e.target.value = ''
     }
-  }, [editor, mode, codeContent])
+  }, [editor, mode, extractTextFromPdfPage])
 
   useEffect(() => {
     // Only sync from props if we are in visual mode to avoid fighting with textarea
@@ -486,7 +544,13 @@ const RichTextEditor = ({
   }
 
   return (
-    <div className={cn('border rounded-lg overflow-hidden flex flex-col', className)}>
+    <div
+      className={cn(
+        'border rounded-lg overflow-hidden flex flex-col bg-background',
+        isFullscreen ? 'fixed inset-4 z-50 shadow-2xl' : '',
+        className
+      )}
+    >
       {editable && (
         <div className="border-b p-2 bg-gray-50">
           <div className="flex flex-wrap items-center gap-1">
@@ -529,23 +593,21 @@ const RichTextEditor = ({
                 <Button variant="ghost" size="sm" type="button" onClick={() => editor.chain().focus().toggleCodeBlock().run()} className={editor.isActive('codeBlock') ? 'bg-gray-200' : ''}>
                   <Code className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="sm" type="button" onClick={() => (editor.chain().focus() as any).setTextAlign('left').run()} className={editor.isActive({ textAlign: 'left' }) ? 'bg-gray-200' : ''}>
-                  <AlignLeft className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="sm" type="button" onClick={() => (editor.chain().focus() as any).setTextAlign('center').run()} className={editor.isActive({ textAlign: 'center' }) ? 'bg-gray-200' : ''}>
-                  <AlignCenter className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="sm" type="button" onClick={() => (editor.chain().focus() as any).setTextAlign('right').run()} className={editor.isActive({ textAlign: 'right' }) ? 'bg-gray-200' : ''}>
-                  <AlignRight className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="sm" type="button" onClick={() => (editor.chain().focus() as any).setTextAlign('justify').run()} className={editor.isActive({ textAlign: 'justify' }) ? 'bg-gray-200' : ''}>
-                  <AlignJustify className="h-4 w-4" />
-                </Button>
                 <Separator orientation="vertical" className="mx-1 h-6" />
               </>
             )}
 
             {/* Shared Tools (Available in both modes, adapt behavior) */}
+            <Button
+              variant="ghost"
+              size="sm"
+              type="button"
+              onClick={() => setIsFullscreen((v) => !v)}
+              title={isFullscreen ? "Quitter le mode étendu (Esc)" : "Mode étendu"}
+              aria-label={isFullscreen ? "Quitter le mode étendu" : "Mode étendu"}
+            >
+              {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </Button>
             <Button variant="ghost" size="sm" type="button" onClick={() => document.getElementById('pdf-upload')?.click()} disabled={isExtractingPdf} title="Importer PDF">
               {isExtractingPdf ? <Wand2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
             </Button>
@@ -611,7 +673,7 @@ const RichTextEditor = ({
         </div>
       )}
 
-      <div className="flex-1 min-h-[400px] max-h-[600px] overflow-hidden relative">
+      <div className={cn('flex-1 min-h-[400px] overflow-hidden relative', isFullscreen ? 'max-h-[calc(100vh-12rem)]' : 'max-h-[600px]')}>
         {mode === 'visual' ? (
           <div className="absolute inset-0 overflow-y-auto">
             <EditorContent editor={editor} className="h-full" />
@@ -696,12 +758,20 @@ const RichTextEditor = ({
             />
             <div className="rounded-lg border bg-muted/40 p-3 min-h-[120px] max-h-[320px] overflow-auto">
               {htmlPreview ? (
-                <div dangerouslySetInnerHTML={{ __html: htmlPreview }} />
+                <div className="prose prose-sm sm:prose max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: htmlPreview }} />
               ) : (
                 <span className="text-xs text-muted-foreground">La prévisualisation apparaît ici.</span>
               )}
             </div>
             <DialogFooter className="flex gap-2 justify-end">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setHtmlSnippet((prev) => formatHtmlSnippet(prev))}
+                disabled={!htmlSnippet.trim()}
+              >
+                Formatter
+              </Button>
               <Button type="button" variant="ghost" onClick={() => setHtmlDialogOpen(false)}>
                 Annuler
               </Button>

@@ -126,15 +126,25 @@ export function DeleteConfirmationModal({
 
     try {
       const supabase = createClient()
-      
-      // Delete the resource
-      const { error: deleteError } = await supabase
-        .from(config.table)
-        .delete()
-        .eq('id', resourceId)
 
-      if (deleteError) {
-        throw deleteError
+      // Users are soft-deleted (status=deleted) to avoid orphaning auth users + cascades.
+      if (resourceType === 'user') {
+        const { error: updateError } = await supabase
+          .from(config.table)
+          .update({ status: 'deleted', updated_at: new Date().toISOString() })
+          .eq('id', resourceId)
+
+        if (updateError) throw updateError
+      } else {
+        // Delete the resource
+        const { error: deleteError } = await supabase
+          .from(config.table)
+          .delete()
+          .eq('id', resourceId)
+
+        if (deleteError) {
+          throw deleteError
+        }
       }
 
       // Success

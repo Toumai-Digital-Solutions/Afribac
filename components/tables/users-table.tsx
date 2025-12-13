@@ -7,6 +7,8 @@ import { DeleteConfirmationModal } from '@/components/modals/delete-confirmation
 import { Users, ExternalLink, Calendar, Mail, Globe, GraduationCap } from 'lucide-react'
 import { ColumnDef } from '@tanstack/react-table'
 import Link from 'next/link'
+import { UserModal } from '@/components/modals/user-modal'
+import { UserAdminActions } from '@/components/admin/user-admin-actions'
 
 interface User {
   id: string
@@ -231,6 +233,13 @@ const columns: ColumnDef<User>[] = [
             <ExternalLink className="h-4 w-4" />
           </Link>
         </Button>
+        <UserModal mode="edit" initialData={row.original as any} />
+        <UserAdminActions
+          userId={row.original.id}
+          userEmail={row.original.email}
+          currentStatus={row.original.status}
+          onDone={() => {}}
+        />
         <DeleteConfirmationModal
           resourceType="user"
           resourceName={row.original.full_name || row.original.email}

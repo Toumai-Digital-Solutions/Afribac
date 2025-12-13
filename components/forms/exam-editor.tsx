@@ -93,6 +93,8 @@ export function ExamEditor({ mode, initialData }: ExamEditorProps) {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [activeTab, setActiveTab] = useState('questions')
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [currentUserRole, setCurrentUserRole] = useState<'admin' | 'member' | 'user' | null>(null)
+  const [currentUserCountryCode, setCurrentUserCountryCode] = useState<string | null>(null)
 
   // Load form data
   useEffect(() => {
@@ -122,7 +124,22 @@ export function ExamEditor({ mode, initialData }: ExamEditorProps) {
       setSubjects(subjectsData || [])
       setSeries(seriesData || [])
       setTags(tagsData || [])
-      setCurrentUserId(userRes.data.user?.id ?? null)
+      const nextUserId = userRes.data.user?.id ?? null
+      setCurrentUserId(nextUserId)
+
+      if (nextUserId) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role, country:countries(code)')
+          .eq('id', nextUserId)
+          .single()
+
+        setCurrentUserRole((profile?.role as any) ?? null)
+        setCurrentUserCountryCode((profile as any)?.country?.code ?? null)
+      } else {
+        setCurrentUserRole(null)
+        setCurrentUserCountryCode(null)
+      }
     } catch (error) {
       console.error('Error loading form data:', error)
       toast.error('Erreur lors du chargement des données')
@@ -276,10 +293,14 @@ export function ExamEditor({ mode, initialData }: ExamEditorProps) {
       // Use existing exam ID or generate a temporary one for new exams
       const examIdForFolder = examId || initialData?.id || `temp-${Date.now()}`
       
-      // Create file path: /exams/subject-name-exam-id/filename
-      const fileExtension = file.name.split('.').pop()
+      // Storage path should be prefixed by country code to match RLS expectations:
+      // country_code/subject/exams/<exam_id>/<filename>
+      const prefix = currentUserRole === 'admin'
+        ? 'global'
+        : (currentUserCountryCode || 'unknown')
+
       const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
-      const filePath = `exams/${subjectSlug}-${examIdForFolder}/${fileName}`
+      const filePath = `${prefix}/${subjectSlug}/exams/${examIdForFolder}/${fileName}`
       
       // Upload to course-materials bucket (reused for exams)
       const { data, error: uploadError } = await supabase.storage
@@ -403,13 +424,23 @@ export function ExamEditor({ mode, initialData }: ExamEditorProps) {
             {isSubmitting ? 'Sauvegarde...' : 'Sauvegarder'}
           </Button>
           
-          <Button
-            onClick={() => handleSubmit('published')}
-            disabled={isSubmitting || !formData.title || !formData.subject_id || !formData.series_id}
-          >
-            <Eye className="h-4 w-4 mr-2" />
-            Publier
-          </Button>
+          {formData.status === 'published' && mode === 'edit' ? (
+            <Button
+              variant="secondary"
+              onClick={() => handleSubmit('draft')}
+              disabled={isSubmitting}
+            >
+              Dépublier
+            </Button>
+          ) : (
+            <Button
+              onClick={() => handleSubmit('published')}
+              disabled={isSubmitting || !formData.title || !formData.subject_id || !formData.series_id}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Publier
+            </Button>
+          )}
         </div>
       </div>
 

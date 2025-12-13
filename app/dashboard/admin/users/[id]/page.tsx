@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { UserModal } from '@/components/modals/user-modal'
+import { UserAdminActions } from '@/components/admin/user-admin-actions'
 import { ArrowLeft, Edit, Users, Mail, Phone, Calendar, Globe, GraduationCap, Shield, User } from 'lucide-react'
 import Link from 'next/link'
 
@@ -50,10 +51,22 @@ export default async function UserDetailsPage({ params }: UserDetailsPageProps) 
   }
 
   // Get user statistics (if needed)
-  // const { data: userStats } = await supabase
-  //   .from('user_progress')
-  //   .select('*')
-  //   .eq('user_id', user.id)
+  const [
+    { count: coursesStarted },
+    { count: coursesCompleted },
+    { data: progressTimeRows },
+    { count: quizAttempts },
+    { count: examAttempts }
+  ] = await Promise.all([
+    supabase.from('user_progress').select('course_id', { count: 'exact', head: true }).eq('user_id', user.id),
+    supabase.from('user_progress').select('course_id', { count: 'exact', head: true }).eq('user_id', user.id).eq('is_completed', true),
+    supabase.from('user_progress').select('time_spent').eq('user_id', user.id),
+    supabase.from('quiz_attempts').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+    supabase.from('exam_attempts').select('id', { count: 'exact', head: true }).eq('user_id', user.id)
+  ])
+
+  const totalMinutes = (progressTimeRows || []).reduce((sum: number, row: any) => sum + (row.time_spent || 0), 0)
+  const totalHours = Math.round((totalMinutes / 60) * 10) / 10
 
   const getRoleConfig = (role: string) => {
     switch (role) {
@@ -158,7 +171,15 @@ export default async function UserDetailsPage({ params }: UserDetailsPageProps) 
             </div>
           </div>
           
-          <UserModal mode="edit" initialData={user} />
+          <div className="flex flex-col items-end gap-2">
+            <UserAdminActions
+              userId={user.id}
+              userEmail={user.email}
+              currentStatus={user.status}
+              onDone={() => {}}
+            />
+            <UserModal mode="edit" initialData={user} />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -320,15 +341,23 @@ export default async function UserDetailsPage({ params }: UserDetailsPageProps) 
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Cours suivis</span>
-                    <span className="font-semibold">0</span>
+                    <span className="font-semibold">{coursesStarted || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Cours terminés</span>
+                    <span className="font-semibold">{coursesCompleted || 0}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Quiz complétés</span>
-                    <span className="font-semibold">0</span>
+                    <span className="font-semibold">{quizAttempts || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Simulations</span>
+                    <span className="font-semibold">{examAttempts || 0}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Temps total</span>
-                    <span className="font-semibold">0h</span>
+                    <span className="font-semibold">{totalHours}h</span>
                   </div>
                 </div>
               </CardContent>

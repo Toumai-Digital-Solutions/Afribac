@@ -134,7 +134,9 @@ export function QuizExerciseEditor({ mode, contentType, initialData }: QuizExerc
           *,
           countries(*)
         `).order('name'),
-        supabase.from('courses').select('*').eq('status', 'publish').order('title'),
+        // Include drafts too, so members can attach quizzes/exercises to courses before publishing.
+        // RLS will still scope the visible set appropriately.
+        supabase.from('courses').select('*').neq('status', 'archived').order('title'),
         supabase.from('tags').select('*').order('name'),
         supabase.auth.getUser(),
       ])
@@ -460,13 +462,23 @@ export function QuizExerciseEditor({ mode, contentType, initialData }: QuizExerc
             {isSubmitting ? 'Sauvegarde...' : 'Sauvegarder'}
           </Button>
           
-          <Button
-            onClick={() => handleSubmit('published')}
-            disabled={isSubmitting || !formData.title || !formData.subject_id || !formData.series_id}
-          >
-            <Eye className="h-4 w-4 mr-2" />
-            Publier
-          </Button>
+          {formData.status === 'published' && mode === 'edit' ? (
+            <Button
+              variant="secondary"
+              onClick={() => handleSubmit('draft')}
+              disabled={isSubmitting}
+            >
+              Dépublier
+            </Button>
+          ) : (
+            <Button
+              onClick={() => handleSubmit('published')}
+              disabled={isSubmitting || !formData.title || !formData.subject_id || !formData.series_id}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Publier
+            </Button>
+          )}
         </div>
       </div>
 

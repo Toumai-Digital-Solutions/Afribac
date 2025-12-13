@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -55,38 +56,40 @@ export default async function StudentQuizPage() {
     ) : (
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {list.map((item) => (
-          <Card key={item.id} className="flex flex-col">
-            <CardHeader className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Badge variant="outline">{item.subject_name}</Badge>
-                <Badge>{item.difficulty_level ?? 1}/5</Badge>
-              </div>
-              <CardTitle className="line-clamp-2 text-base">{item.title}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm text-muted-foreground flex-1">
-              {item.description && (
-                <p className="line-clamp-3">{item.description}</p>
-              )}
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                {item.estimated_duration || 20} minutes
-              </div>
-              {item.tag_names?.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {item.tag_names.slice(0, 3).map((tag: string) => (
-                    <Badge key={tag} variant="secondary" className="text-xs">
-                      {tag}
-                    </Badge>
-                  ))}
-                  {item.tag_names.length > 3 && (
-                    <Badge variant="secondary" className="text-xs">
-                      +{item.tag_names.length - 3}
-                    </Badge>
-                  )}
+          <Link key={item.id} href={`/student/quiz/${item.id}`} className="block">
+            <Card className="flex flex-col hover:shadow-md transition-shadow">
+              <CardHeader className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Badge variant="outline">{item.subject_name}</Badge>
+                  <Badge>{item.difficulty_level ?? 1}/5</Badge>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+                <CardTitle className="line-clamp-2 text-base">{item.title}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm text-muted-foreground flex-1">
+                {item.description && (
+                  <p className="line-clamp-3">{item.description}</p>
+                )}
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  {item.estimated_duration || 20} minutes
+                </div>
+                {item.tag_names?.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {item.tag_names.slice(0, 3).map((tag: string) => (
+                      <Badge key={tag} variant="secondary" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                    {item.tag_names.length > 3 && (
+                      <Badge variant="secondary" className="text-xs">
+                        +{item.tag_names.length - 3}
+                      </Badge>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
     )

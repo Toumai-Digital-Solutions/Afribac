@@ -34,33 +34,33 @@ Last updated: 2025-12-13
 - [x] [ ] Remove console logs in auth/dashboards (`use-auth`, legacy dashboards) and standardize redirects
 
 ### 3) Fix missing / stubbed API routes
-- [ ] [ ] Decide: implement or delete `app/api/extract-pdf/` (currently directory without route)
+- [x] [x] Decide: implement or delete `app/api/extract-pdf/` (Implemented with Google Gemini)
 - [ ] [ ] Decide: implement or delete `app/api/admin/users/` (currently directory without route)
 
 ### 4) Student core loop (must work end-to-end)
-- [ ] [ ] Course detail page (open a course, show content + PDF/video if present)
-- [ ] [ ] PDF viewing experience is smooth (loading, error states, mobile)
-- [ ] [ ] Progress updates:
-  - [ ] [ ] create/update `user_progress` on open/leave/complete
-  - [ ] [ ] track time spent + last accessed
-- [ ] [ ] Student library experience:
-  - [ ] [ ] browse courses (filtered by country/series via RLS)
-  - [ ] [ ] browse exams
+- [x] [ ] Course detail page (open a course, show content + PDF/video if present)
+- [x] [ ] PDF viewing experience is smooth (loading, error states, mobile)
+- [x] [ ] Progress updates:
+  - [x] [ ] create/update `user_progress` on open/leave/complete
+  - [x] [ ] track time spent + last accessed
+- [x] [ ] Student library experience:
+  - [x] [x] browse courses (filtered by country/series via RLS)
+  - [x] [x] browse exams
 
 ### 5) Member core loop (create → publish → students consume)
-- [ ] [ ] Course editor “happy path” works:
-  - [ ] [ ] create/edit content
-  - [ ] [ ] upload course materials to `course-materials` bucket (PDF)
-  - [ ] [ ] publish/unpublish (status changes)
-- [ ] [ ] Exam creation “happy path” works (questions/correction PDFs or rich content)
-- [ ] [ ] Quiz/exercise creation “happy path” works (questions + options)
+- [x] [ ] Course editor “happy path” works:
+  - [x] [ ] create/edit content
+  - [x] [ ] upload course materials to `course-materials` bucket (PDF)
+  - [x] [ ] publish/unpublish (status changes)
+- [x] [ ] Exam creation “happy path” works (questions/correction PDFs or rich content)
+- [x] [ ] Quiz/exercise creation “happy path” works (questions + options)
 
 ### 6) Quiz & exam attempts (student assessment)
-- [ ] [ ] Quiz taking flow:
-  - [ ] [ ] start attempt → answer → submit → score → store in `quiz_attempts` + `user_answers`
-- [ ] [ ] Exam simulation attempts:
-  - [ ] [ ] start attempt → autosave answers → submit → store in `exam_attempts`
-- [ ] [ ] Results screen (at least score + corrections access)
+- [x] [ ] Quiz taking flow:
+  - [x] [ ] start attempt → answer → submit → score → store in `quiz_attempts` + `user_answers`
+- [x] [ ] Exam simulation attempts:
+  - [x] [ ] start attempt → autosave answers → submit → store in `exam_attempts`
+- [x] [ ] Results screen (at least score + corrections access)
 
 ### 7) Admin operations (minimum for real operations)
 - [ ] [ ] Replace “manual” admin setup with documented steps (create admin user, seed)

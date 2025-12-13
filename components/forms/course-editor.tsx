@@ -102,6 +102,8 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
   const [loading, setLoading] = useState(true)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [currentUserRole, setCurrentUserRole] = useState<'admin' | 'member' | 'user' | null>(null)
+  const [currentUserCountryCode, setCurrentUserCountryCode] = useState<string | null>(null)
   const [isTopicDialogOpen, setIsTopicDialogOpen] = useState(false)
   const [newTopicName, setNewTopicName] = useState('')
   const [newTopicDescription, setNewTopicDescription] = useState('')
@@ -160,7 +162,22 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
       setTags(tagsData || [])
       setTopics(topicsData || [])
       setCountries(countriesData || [])
-      setCurrentUserId(userRes.data.user?.id ?? null)
+      const nextUserId = userRes.data.user?.id ?? null
+      setCurrentUserId(nextUserId)
+
+      if (nextUserId) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role, country:countries(code)')
+          .eq('id', nextUserId)
+          .single()
+
+        setCurrentUserRole((profile?.role as any) ?? null)
+        setCurrentUserCountryCode((profile as any)?.country?.code ?? null)
+      } else {
+        setCurrentUserRole(null)
+        setCurrentUserCountryCode(null)
+      }
     } catch (error) {
       console.error('Error loading form data:', error)
       toast.error('Erreur lors du chargement des données')
@@ -321,7 +338,7 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
   }
 
   // Upload files to Supabase storage
-  const uploadCourseFile = async (file: File, folder: string) => {
+  const uploadCourseFile = async (file: File) => {
     try {
       const supabase = createClient()
       
@@ -332,10 +349,14 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
       // Use existing course ID or generate a temporary one for new courses
       const courseIdForFolder = initialData?.id || `temp-${Date.now()}`
       
-      // Create file path: /courses/subject-name-course-id/filename
-      const fileExtension = file.name.split('.').pop()
+      // Storage path should be prefixed by country code to match RLS expectations:
+      // country_code/subject/courses/<course_id>/<filename>
+      const prefix = currentUserRole === 'admin'
+        ? 'global'
+        : (currentUserCountryCode || 'unknown')
+
       const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
-      const filePath = `courses/${subjectSlug}-${courseIdForFolder}/${fileName}`
+      const filePath = `${prefix}/${subjectSlug}/courses/${courseIdForFolder}/${fileName}`
       
       // Upload to course-materials bucket
       const { data, error: uploadError } = await supabase.storage
@@ -365,7 +386,7 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
     const file = files[0] // Take first file only
     
     try {
-      const { url, filename } = await uploadCourseFile(file, 'pdfs')
+      const { url, filename } = await uploadCourseFile(file)
       
       setFormData(prev => ({ 
         ...prev, 
@@ -587,13 +608,23 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
             {isSubmitting ? 'Sauvegarde...' : 'Sauvegarder'}
           </Button>
           
-          <Button
-            onClick={() => handleSubmit('publish')}
-            disabled={isSubmitting || !formData.title || !formData.subject_id}
-          >
-            <Eye className="h-4 w-4 mr-2" />
-            Publier
-          </Button>
+          {formData.status === 'publish' && mode === 'edit' ? (
+            <Button
+              variant="secondary"
+              onClick={() => handleSubmit('draft')}
+              disabled={isSubmitting}
+            >
+              Dépublier
+            </Button>
+          ) : (
+            <Button
+              onClick={() => handleSubmit('publish')}
+              disabled={isSubmitting || !formData.title || !formData.subject_id}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Publier
+            </Button>
+          )}
         </div>
       </div>
 
