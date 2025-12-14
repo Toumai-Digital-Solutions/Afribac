@@ -119,17 +119,17 @@ const RichTextEditor = ({
           class: 'table-auto border-collapse border border-gray-300',
         },
       }),
-      TableRow.extend({
+      TableRow.configure({
         HTMLAttributes: {
           class: 'border border-gray-300',
         },
       }),
-      TableHeader.extend({
+      TableHeader.configure({
         HTMLAttributes: {
           class: 'border border-gray-300 bg-gray-50 font-semibold p-2',
         },
       }),
-      TableCell.extend({
+      TableCell.configure({
         HTMLAttributes: {
           class: 'border border-gray-300 p-2',
         },
