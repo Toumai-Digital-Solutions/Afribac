@@ -1,7 +1,7 @@
 import { google } from '@ai-sdk/google';
 import { streamText } from 'ai';
 
-export const maxDuration = 60; // Allow up to 60 seconds for processing
+export const maxDuration = 120; // Allow up to 60 seconds for processing
 
 export async function POST(req: Request) {
   try {
@@ -16,7 +16,7 @@ export async function POST(req: Request) {
       messages: [
         {
           role: 'system',
-          content: 'You are an expert document digitizer. Transcribe the following document page into clean HTML. Use standard tags like <h1>, <p>, <ul>, <table>. Use LaTeX for math formulas (wrapped in $ or $$). Do not add any conversational text, just the HTML content.',
+          content: 'You are an expert document digitizer. Transcribe the following document page into clean HTML. Use standard tags like <h1>, <p>, <ul>, <table>. Use LaTeX for math formulas (wrapped in $ or $$). Do not add any conversational text, just the HTML content. Also i want a good formatting of the text, so use proper indentation and line breaks. ',
         },
         {
           role: 'user',
