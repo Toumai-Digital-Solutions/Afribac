@@ -608,12 +608,10 @@ export default function ComponentsPage() {
                 title="Buttons" 
                 description="Different button variants and states for various use cases."
               >
-                <ComponentDemo title="Button Variants" description="All button variants including educational colors">
+                <ComponentDemo title="Button Variants" description="All button variants">
                   <div className="flex flex-wrap gap-3">
                     <Button>Primary Button</Button>
                     <Button variant="secondary">Secondary</Button>
-                    <Button variant="success">Success</Button>
-                    <Button variant="warning">Warning</Button>
                     <Button variant="destructive">Destructive</Button>
                     <Button variant="outline">Outline</Button>
                     <Button variant="ghost">Ghost</Button>

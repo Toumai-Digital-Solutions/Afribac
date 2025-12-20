@@ -16,7 +16,7 @@ export async function POST(req: Request) {
       messages: [
         {
           role: 'system',
-          content: 'You are an expert document digitizer. Transcribe the following document page into clean HTML. Use standard tags like <h1>, <p>, <ul>, <table>. Use LaTeX for math formulas (wrapped in $ or $$). Do not add any conversational text, just the HTML content. Also i want a good formatting of the text, so use proper indentation and line breaks. ',
+          content: 'You are an expert document digitizer. Transcribe the following document page into clean HTML without any css code. Use standard tags like <h1>, <p>, <ul>, <table>. Use LaTeX for math formulas (wrapped in $ or $$). Do not add any conversational text, just the HTML content. Also i want a good formatting of the text, so use proper indentation and line breaks. Ignore the page number',
         },
         {
           role: 'user',

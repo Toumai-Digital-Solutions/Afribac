@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { ArrowLeft, Save, Eye, Plus, Trash2, GripVertical, Brain, FileText, X } from 'lucide-react'
+import type { Value } from 'platejs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -21,7 +22,7 @@ import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Switch } from '@/components/ui/switch'
-import RichTextEditor from '@/components/editors/rich-text-editor'
+import { AdminPlateEditor } from '@/components/editor/admin-plate-editor'
 import { MultiSelect, Option } from '@/components/ui/multi-select'
 import { createClient } from '@/lib/supabase/client'
 import { QuizExercise, Subject, Series, Tag, Country, Question, AnswerOption, Course } from '@/types/database'
@@ -42,17 +43,17 @@ interface FormData {
   course_id: string
   difficulty_level: number
   estimated_duration: number
-  instructions: string
+  instructions: Value
   status: 'draft' | 'published' | 'archived'
   tag_ids: string[]
 }
 
 interface QuestionData {
   id?: string
-  question_text: string
+  question_text: Value
   question_type: 'single_choice' | 'multiple_choice' | 'true_false' | 'short_answer'
   points: number
-  explanation: string
+  explanation: Value
   order_index: number
   answer_options: {
     id?: string
@@ -71,6 +72,10 @@ const questionTypeLabels = {
 
 export function QuizExerciseEditor({ mode, contentType, initialData }: QuizExerciseEditorProps) {
   const router = useRouter()
+
+  // Default empty editor value
+  const emptyEditorValue: Value = [{ type: 'p', children: [{ text: '' }] }]
+
   const [formData, setFormData] = useState<FormData>({
     title: initialData?.title || '',
     description: initialData?.description || '',
@@ -80,7 +85,7 @@ export function QuizExerciseEditor({ mode, contentType, initialData }: QuizExerc
     course_id: initialData?.course_id || '',
     difficulty_level: initialData?.difficulty_level || 1,
     estimated_duration: initialData?.estimated_duration || 30,
-    instructions: initialData?.instructions || '',
+    instructions: initialData?.instructions_json || emptyEditorValue,
     status: initialData?.status || 'draft',
     tag_ids: initialData?.quiz_exercise_tags?.map((et: any) => et.tag_id) || [],
   })
@@ -88,10 +93,10 @@ export function QuizExerciseEditor({ mode, contentType, initialData }: QuizExerc
   const [questions, setQuestions] = useState<QuestionData[]>(
     initialData?.questions?.map((q: any, index: number) => ({
       id: q.id,
-      question_text: q.question_text,
+      question_text: q.question_text_json || emptyEditorValue,
       question_type: q.question_type,
       points: q.points,
-      explanation: q.explanation || '',
+      explanation: q.explanation_json || emptyEditorValue,
       order_index: index,
       answer_options: q.answer_options?.map((opt: any, optIndex: number) => ({
         id: opt.id,
@@ -173,9 +178,25 @@ export function QuizExerciseEditor({ mode, contentType, initialData }: QuizExerc
       newErrors.questions = 'Au moins une question est requise'
     }
 
+    // Helper to check if editor content is empty
+    const isEditorEmpty = (value: Value): boolean => {
+      if (!value || value.length === 0) return true
+      // Check if it's just an empty paragraph
+      if (value.length === 1) {
+        const firstNode = value[0] as any
+        if (firstNode.type === 'p' && firstNode.children?.length === 1) {
+          const textNode = firstNode.children[0]
+          if (typeof textNode.text === 'string' && textNode.text.trim() === '') {
+            return true
+          }
+        }
+      }
+      return false
+    }
+
     // Validate questions
     questions.forEach((question, index) => {
-      if (!question.question_text.trim()) {
+      if (isEditorEmpty(question.question_text)) {
         newErrors[`question_${index}_text`] = 'Le texte de la question est requis'
       }
       
@@ -226,10 +247,11 @@ export function QuizExerciseEditor({ mode, contentType, initialData }: QuizExerc
         .from('questions')
         .insert({
           quiz_exercise_id: quizExerciseId,
-          question_text: question.question_text,
+          question_text_json: question.question_text,
           question_type: question.question_type,
           points: question.points,
-          explanation: question.explanation || null,
+          explanation_json: question.explanation,
+          content_format: 'json',
           order_index: question.order_index
         })
         .select()
@@ -272,7 +294,8 @@ export function QuizExerciseEditor({ mode, contentType, initialData }: QuizExerc
         course_id: formData.course_id || null,
         difficulty_level: formData.difficulty_level,
         estimated_duration: formData.estimated_duration,
-        instructions: formData.instructions.trim() || null,
+        instructions_json: formData.instructions,
+        content_format: 'json' as const,
         status,
       }
 
@@ -332,10 +355,10 @@ export function QuizExerciseEditor({ mode, contentType, initialData }: QuizExerc
 
   const addQuestion = () => {
     const newQuestion: QuestionData = {
-      question_text: '',
+      question_text: emptyEditorValue,
       question_type: contentType === 'quiz' ? 'single_choice' : 'short_answer',
       points: 1,
-      explanation: '',
+      explanation: emptyEditorValue,
       order_index: questions.length,
       answer_options: contentType === 'quiz' ? [
         { option_text: '', is_correct: false, order_index: 0 },
@@ -518,10 +541,11 @@ export function QuizExerciseEditor({ mode, contentType, initialData }: QuizExerc
 
               <div>
                 <Label htmlFor="instructions">Instructions</Label>
-                <RichTextEditor
-                  content={formData.instructions}
+                <AdminPlateEditor
+                  value={formData.instructions}
                   onChange={handleChange('instructions')}
                   placeholder="Instructions pour les utilisateurs..."
+                  galleryUserId={currentUserId ?? undefined}
                 />
               </div>
             </CardContent>
@@ -583,10 +607,11 @@ export function QuizExerciseEditor({ mode, contentType, initialData }: QuizExerc
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="md:col-span-2">
                             <Label>Question *</Label>
-                            <RichTextEditor
-                              content={question.question_text}
+                            <AdminPlateEditor
+                              value={question.question_text}
                               onChange={(value) => updateQuestion(questionIndex, 'question_text', value)}
                               placeholder="Posez votre question..."
+                              galleryUserId={currentUserId ?? undefined}
                             />
                             {errors[`question_${questionIndex}_text`] && (
                               <p className="text-sm text-red-500 mt-1">{errors[`question_${questionIndex}_text`]}</p>
@@ -627,10 +652,11 @@ export function QuizExerciseEditor({ mode, contentType, initialData }: QuizExerc
                             <Label>
                               {contentType === 'quiz' ? 'Explication (optionnel)' : 'Solution/Explication *'}
                             </Label>
-                            <RichTextEditor
-                              content={question.explanation}
+                            <AdminPlateEditor
+                              value={question.explanation}
                               onChange={(value) => updateQuestion(questionIndex, 'explanation', value)}
                               placeholder={contentType === 'quiz' ? 'Explication de la réponse...' : 'Solution détaillée...'}
+                              galleryUserId={currentUserId ?? undefined}
                             />
                           </div>
                         </div>

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { ArrowLeft, Save, Eye, Upload, Clock, AlertCircle, Loader2, FileText, BookOpen } from 'lucide-react'
+import type { Value } from 'platejs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -20,7 +21,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import RichTextEditor from '@/components/editors/rich-text-editor'
+import { AdminPlateEditor } from '@/components/editor/admin-plate-editor'
 import { MultiSelect, Option } from '@/components/ui/multi-select'
 import { FileUpload } from './file-upload'
 import { createClient } from '@/lib/supabase/client'
@@ -36,8 +37,8 @@ interface ExamEditorProps {
 interface FormData {
   title: string
   description: string
-  questions_content: string
-  correction_content: string
+  questions_content: Value
+  correction_content: Value
   questions_pdf_url: string
   questions_pdf_filename: string
   correction_pdf_url: string
@@ -64,11 +65,14 @@ const examTypeLabels = {
 
 export function ExamEditor({ mode, initialData }: ExamEditorProps) {
   const router = useRouter()
+  // Default empty editor value
+  const emptyEditorValue: Value = [{ type: 'p', children: [{ text: '' }] }]
+
   const [formData, setFormData] = useState<FormData>({
     title: initialData?.title || '',
     description: initialData?.description || '',
-    questions_content: initialData?.questions_content || '',
-    correction_content: initialData?.correction_content || '',
+    questions_content: initialData?.questions_content_json || emptyEditorValue,
+    correction_content: initialData?.correction_content_json || emptyEditorValue,
     questions_pdf_url: initialData?.questions_pdf_url || '',
     questions_pdf_filename: initialData?.questions_pdf_filename || '',
     correction_pdf_url: initialData?.correction_pdf_url || '',
@@ -198,8 +202,9 @@ export function ExamEditor({ mode, initialData }: ExamEditorProps) {
       const examData = {
         title: formData.title.trim(),
         description: formData.description.trim() || null,
-        questions_content: formData.questions_content || null,
-        correction_content: formData.correction_content || null,
+        questions_content_json: formData.questions_content,
+        correction_content_json: formData.correction_content,
+        content_format: 'json' as const,
         questions_pdf_url: formData.questions_pdf_url || null,
         questions_pdf_filename: formData.questions_pdf_filename || null,
         correction_pdf_url: formData.correction_pdf_url || null,
@@ -500,8 +505,8 @@ export function ExamEditor({ mode, initialData }: ExamEditorProps) {
                 
                 <TabsContent value="questions" className="mt-4">
                   <div className="space-y-4">
-                    <RichTextEditor
-                      content={formData.questions_content}
+                    <AdminPlateEditor
+                      value={formData.questions_content}
                       onChange={handleChange('questions_content')}
                       placeholder="Saisissez les questions de l'examen avec formatage riche, équations mathématiques..."
                       galleryUserId={currentUserId ?? undefined}
@@ -529,8 +534,8 @@ export function ExamEditor({ mode, initialData }: ExamEditorProps) {
                 
                 <TabsContent value="correction" className="mt-4">
                   <div className="space-y-4">
-                    <RichTextEditor
-                      content={formData.correction_content}
+                    <AdminPlateEditor
+                      value={formData.correction_content}
                       onChange={handleChange('correction_content')}
                       placeholder="Saisissez la correction détaillée avec explications, calculs, solutions..."
                       galleryUserId={currentUserId ?? undefined}

@@ -19,7 +19,8 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import RichTextEditor from '@/components/editors/rich-text-editor'
+import { AdminPlateEditor } from '@/components/editor/admin-plate-editor'
+import type { Value } from 'platejs'
 import { MultiSelect, Option } from '@/components/ui/multi-select'
 import { FileUpload } from './file-upload'
 import { createClient } from '@/lib/supabase/client'
@@ -59,10 +60,15 @@ interface CourseEditorProps {
   initialData?: any // Course with related data
 }
 
+const defaultEditorValue: Value = [
+  { children: [{ text: '' }], type: 'p' },
+]
+
 interface FormData {
   title: string
   description: string
-  content: string
+  content: Value // Plate JSON format
+  content_html?: string // Legacy HTML content (for display only)
   subject_id: string
   topic_id: string
   difficulty_level: number
@@ -80,7 +86,9 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
   const [formData, setFormData] = useState<FormData>({
     title: initialData?.title || '',
     description: initialData?.description || '',
-    content: initialData?.content || '',
+    // Use JSON content if available, otherwise use default
+    content: initialData?.content_json || defaultEditorValue,
+    content_html: initialData?.content || '', // Keep HTML for reference
     subject_id: initialData?.subject_id || '',
     topic_id: initialData?.topic_id || '',
     difficulty_level: initialData?.difficulty_level || 1,
@@ -262,7 +270,8 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
       const courseData = {
         title: formData.title || 'Cours sans titre',
         description: formData.description || null,
-        content: formData.content || null,
+        content_json: formData.content, // Save Plate JSON format
+        content_format: 'json' as const, // Mark as JSON format
         subject_id: formData.subject_id,
         topic_id: formData.topic_id || null,
         difficulty_level: formData.difficulty_level,
@@ -678,8 +687,8 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
               <CardTitle>Contenu du cours</CardTitle>
             </CardHeader>
             <CardContent>
-              <RichTextEditor
-                content={formData.content}
+              <AdminPlateEditor
+                value={formData.content}
                 onChange={handleChange('content')}
                 placeholder="Rédigez le contenu de votre cours avec formatage riche, équations mathématiques, images..."
                 galleryUserId={currentUserId ?? undefined}

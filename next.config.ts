@@ -25,6 +25,7 @@ const nextConfig: NextConfig = {
     remotePatterns,
     domains,
   },
+  transpilePackages: ['pdfjs-dist'],
 };
 
 export default nextConfig;

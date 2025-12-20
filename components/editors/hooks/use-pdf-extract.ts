@@ -39,10 +39,10 @@ export function usePdfExtract({ editor, mode, setCodeContent, onChange }: UsePdf
 
     setIsExtractingPdf(true)
     try {
-      const pdfJS = await import('pdfjs-dist')
+      const pdfJS = await import('pdfjs-dist/legacy/build/pdf.mjs')
       // Avoid remote worker (offline/prod-safe): use bundled worker.
       pdfJS.GlobalWorkerOptions.workerSrc = new URL(
-        'pdfjs-dist/build/pdf.worker.min.mjs',
+        'pdfjs-dist/legacy/build/pdf.worker.min.mjs',
         import.meta.url
       ).toString()
 
