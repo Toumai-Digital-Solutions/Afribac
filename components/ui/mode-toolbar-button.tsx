@@ -36,7 +36,7 @@ export function ModeToolbarButton(props: DropdownMenuProps) {
   const item: Record<string, { icon: React.ReactNode; label: string }> = {
     editing: {
       icon: <PenIcon />,
-      label: 'Editing',
+      label: 'Édition',
     },
     suggestion: {
       icon: <PencilLineIcon />,
@@ -44,14 +44,14 @@ export function ModeToolbarButton(props: DropdownMenuProps) {
     },
     viewing: {
       icon: <EyeIcon />,
-      label: 'Viewing',
+      label: 'Lecture',
     },
   };
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false} {...props}>
       <DropdownMenuTrigger asChild>
-        <ToolbarButton pressed={open} tooltip="Editing mode" isDropdown>
+        <ToolbarButton pressed={open} tooltip="Mode d’édition" isDropdown>
           {item[value].icon}
           <span className="hidden lg:inline">{item[value].label}</span>
         </ToolbarButton>

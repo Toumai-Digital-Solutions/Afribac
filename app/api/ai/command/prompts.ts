@@ -16,27 +16,27 @@ export function getChooseToolPrompt({ messages }: { messages: ChatMessage[] }) {
   return buildStructuredPrompt({
     examples: [
       // GENERATE
-      'User: "Write a paragraph about AI ethics" → Good: "generate" | Bad: "edit"',
-      'User: "Create a short poem about spring" → Good: "generate" | Bad: "comment"',
+      `Utilisateur : « Rédige un paragraphe sur l’éthique de l’IA » → Bien : "generate" | Mal : "edit"`,
+      `Utilisateur : « Écris un court poème sur le printemps » → Bien : "generate" | Mal : "comment"`,
 
       // EDIT
-      'User: "Please fix grammar." → Good: "edit" | Bad: "generate"',
-      'User: "Improving writing style." → Good: "edit" | Bad: "generate"',
-      'User: "Making it more concise." → Good: "edit" | Bad: "generate"',
-      'User: "Translate this paragraph into French" → Good: "edit" | Bad: "generate"',
+      `Utilisateur : « Corrige la grammaire. » → Bien : "edit" | Mal : "generate"`,
+      `Utilisateur : « Améliore le style. » → Bien : "edit" | Mal : "generate"`,
+      `Utilisateur : « Rends ce texte plus concis. » → Bien : "edit" | Mal : "generate"`,
+      `Utilisateur : « Traduis ce paragraphe en anglais. » → Bien : "edit" | Mal : "generate"`,
 
       // COMMENT
-      'User: "Can you review this text and give me feedback?" → Good: "comment" | Bad: "edit"',
-      'User: "Add inline comments to this code to explain what it does" → Good: "comment" | Bad: "generate"',
+      `Utilisateur : « Peux-tu relire ce texte et me donner un avis ? » → Bien : "comment" | Mal : "edit"`,
+      `Utilisateur : « Ajoute des commentaires dans ce code pour l’expliquer » → Bien : "comment" | Mal : "generate"`,
     ],
     history: formatTextFromMessages(messages),
     rules: dedent`
-      - Default is "generate". Any open question, idea request, or creation request → "generate".
-      - Only return "edit" if the user provides original text (or a selection of text) AND asks to change, rephrase, translate, or shorten it.
-      - Only return "comment" if the user explicitly asks for comments, feedback, annotations, or review. Do not infer "comment" implicitly.
-      - Return only one enum value with no explanation.
+      - Par défaut : "generate". Toute question ouverte, demande d’idée, ou demande de création → "generate".
+      - Retourner "edit" uniquement si l’utilisateur fournit du texte (ou une sélection) ET demande de le modifier, reformuler, traduire ou raccourcir.
+      - Retourner "comment" uniquement si l’utilisateur demande explicitement des commentaires, un avis, des annotations ou une relecture. Ne jamais l’inférer implicitement.
+      - Retourner une seule valeur (enum), sans explication.
     `,
-    task: `You are a strict classifier. Classify the user's last request as "generate", "edit", or "comment".`,
+    task: `Tu es un classifieur strict. Classe la dernière demande de l’utilisateur en "generate", "edit", ou "comment".`,
   });
 }
 
@@ -56,7 +56,7 @@ export function getCommentPrompt(
     backgroundData: selectingMarkdown,
     examples: [
       // 1) Basic single-block comment
-      `User: Review this paragraph.
+      `Utilisateur : Relis ce paragraphe.
 
     backgroundData:
   <block id="1">AI systems are transforming modern workplaces by automating routine tasks.</block>
@@ -66,12 +66,12 @@ export function getCommentPrompt(
     {
       "blockId": "1",
       "content": "AI systems are transforming modern workplaces",
-      "comments": "Clarify what types of systems or provide examples."
+      "comment": "Précise le type de systèmes ou ajoute un exemple concret."
     }
   ]`,
 
       // 2) Multiple comments within one long block
-      `User: Add comments for this section.
+      `Utilisateur : Ajoute des commentaires sur ce passage.
 
   backgroundData:
   <block id="2">AI models can automate customer support. However, they may misinterpret user intent if training data is biased.</block>
@@ -81,17 +81,17 @@ export function getCommentPrompt(
     {
       "blockId": "2",
       "content": "AI models can automate customer support.",
-      "comments": "Consider mentioning limitations or scope of automation."
+      "comment": "Tu peux préciser les limites ou le périmètre de l’automatisation."
     },
     {
       "blockId": "2",
       "content": "they may misinterpret user intent if training data is biased",
-      "comments": "Good point—expand on how bias can be detected or reduced."
+      "comment": "Bon point : explique brièvement comment réduire ou détecter les biais."
     }
   ]`,
 
       // 3) Multi-block comment (span across two related paragraphs)
-      `User: Provide comments.
+      `Utilisateur : Fais une relecture et propose un retour.
 
   backgroundData:
   <block id="3">This policy aims to regulate AI-generated media.</block>
@@ -102,12 +102,12 @@ export function getCommentPrompt(
     {
       "blockId": "3",
       "content": "This policy aims to regulate AI-generated media.\\n\\nDevelopers must disclose when content is synthetically produced.",
-      "comments": "You could combine these ideas into a single, clearer statement on transparency."
+      "comment": "Tu peux regrouper ces idées en une phrase plus claire sur la transparence."
     }
   ]`,
 
       // 4) With <Selection> – user highlighted part of a sentence
-      `User: Give feedback on this highlighted phrase.
+      `Utilisateur : Donne un avis sur l’expression surlignée.
 
   backgroundData:
   <block id="5">AI can <Selection>replace human creativity</Selection> in design tasks.</block>
@@ -117,12 +117,12 @@ export function getCommentPrompt(
     {
       "blockId": "5",
       "content": "replace human creativity",
-      "comments": "Overstated claim—suggest using 'assist' instead of 'replace'."
+      "comment": "Formulation trop forte : propose plutôt « assister » que « remplacer »."
     }
   ]`,
 
       // 5) With long <Selection> → multiple comments
-      `User: Review the highlighted section.
+      `Utilisateur : Relis la partie surlignée.
 
   backgroundData:
   <block id="6">
@@ -137,37 +137,37 @@ export function getCommentPrompt(
     {
       "blockId": "6",
       "content": "AI tools are valuable for summarizing information and generating drafts.",
-      "comments": "Solid statement—consider adding specific examples of tools."
+      "comment": "Bonne idée : ajoute un ou deux exemples d’outils."
     },
     {
       "blockId": "6",
       "content": "human review remains essential to ensure accuracy and ethical use",
-      "comments": "Good caution—explain briefly why ethics require human oversight."
+      "comment": "Bonne nuance : explique brièvement pourquoi un contrôle humain est nécessaire."
     }
   ]`,
     ],
     history: formatTextFromMessages(messages),
     rules: dedent`
-      - IMPORTANT: If a comment spans multiple blocks, use the id of the **first** block.
-      - The **content** field must be the original content inside the block tag. The returned content must not include the block tags, but should retain other MDX tags.
-      - IMPORTANT: The **content** field must be flexible:
-        - It can cover one full block, only part of a block, or multiple blocks.
-        - If multiple blocks are included, separate them with two \\n\\n.
-        - Do NOT default to using the entire block—use the smallest relevant span instead.
-      - At least one comment must be provided.
-      - If a <Selection> exists, Your comments should come from the <Selection>, and if the <Selection> is too long, there should be more than one comment.
+      - IMPORTANT : si un commentaire couvre plusieurs blocs, utilise l’id du **premier** bloc.
+      - Le champ **content** doit être l’extrait original (sans les balises <block>), en conservant les balises MDX éventuelles.
+      - IMPORTANT : le champ **content** est flexible :
+        - il peut couvrir un bloc entier, une partie d’un bloc, ou plusieurs blocs ;
+        - si plusieurs blocs sont inclus, sépare-les par deux \\n\\n ;
+        - ne retourne pas systématiquement tout le bloc : utilise la plus petite portion pertinente.
+      - Il faut au moins un commentaire.
+      - Si une balise <Selection> existe, les commentaires doivent porter sur la <Selection>. Si la <Selection> est longue, il doit y avoir plusieurs commentaires.
     `,
     task: dedent`
-      You are a document review assistant.
-      You will receive an MDX document wrapped in <block id="..."> content </block> tags.
-      <Selection> is the text highlighted by the user.
+      Tu es un assistant de relecture.
+      Tu reçois un document MDX découpé en blocs : <block id="...">contenu</block>.
+      <Selection> correspond au texte surligné par l’utilisateur.
 
-      Your task:
-      - Read the content of all blocks and provide comments.
-      - For each comment, generate a JSON object:
-        - blockId: the id of the block being commented on.
-        - content: the original document fragment that needs commenting.
-        - comments: a brief comment or explanation for that fragment.
+      Ta mission :
+      - Lire le contenu et fournir des commentaires.
+      - Pour chaque commentaire, générer un objet JSON :
+        - blockId : l’id du bloc concerné ;
+        - content : l’extrait exact à commenter ;
+        - comment : le commentaire (court) ou une explication.
     `,
   });
 }
@@ -186,43 +186,43 @@ export function getGeneratePrompt(
     backgroundData: selectingMarkdown,
     examples: [
       // 1) Summarize content
-      'User: Summarize the following text.\nBackground data:\nArtificial intelligence has transformed multiple industries, from healthcare to finance, improving efficiency and enabling data-driven decisions.\nOutput:\nAI improves efficiency and decision-making across many industries.',
+      'Utilisateur : Résume le texte suivant.\nDonnées de contexte :\nL’intelligence artificielle a transformé de nombreux secteurs, de la santé à la finance, en améliorant l’efficacité et en permettant des décisions fondées sur les données.\nSortie :\nL’IA améliore l’efficacité et la prise de décision dans de nombreux secteurs.',
 
       // 2) Generate key takeaways
-      'User: List three key takeaways from this text.\nBackground data:\nRemote work increases flexibility but also requires better communication and time management.\nOutput:\n- Remote work enhances flexibility.\n- Communication becomes critical.\n- Time management determines success.',
+      'Utilisateur : Donne trois points clés à retenir.\nDonnées de contexte :\nLe travail à distance augmente la flexibilité, mais exige aussi une meilleure communication et une bonne gestion du temps.\nSortie :\n- Le travail à distance apporte de la flexibilité.\n- La communication devient essentielle.\n- La gestion du temps conditionne la réussite.',
 
       // 3) Generate a title
-      'User: Generate a short, catchy title for this section.\nBackground data:\nThis section explains how machine learning models are trained using large datasets to recognize patterns.\nOutput:\nTraining Machines to Recognize Patterns',
+      'Utilisateur : Propose un titre court et accrocheur.\nDonnées de contexte :\nCette section explique comment des modèles d’apprentissage automatique sont entraînés sur de grands jeux de données pour reconnaître des motifs.\nSortie :\nEntraîner des modèles à reconnaître des motifs',
 
       // 4) Generate action items
-      'User: Generate actionable next steps based on the paragraph.\nBackground data:\nThe report suggests improving documentation and conducting user interviews before the next release.\nOutput:\n- Update all technical documentation.\n- Schedule user interviews before the next release.',
+      'Utilisateur : Propose des prochaines étapes concrètes.\nDonnées de contexte :\nLe rapport suggère d’améliorer la documentation et de mener des entretiens utilisateurs avant la prochaine version.\nSortie :\n- Mettre à jour la documentation technique.\n- Planifier des entretiens utilisateurs avant la prochaine version.',
 
       // 5) Generate a comparison table
-      'User: Generate a comparison table of the tools mentioned.\nBackground data:\nTool A: free, simple UI\nTool B: paid, advanced analytics\nOutput:\n| Tool  | Pricing | Features         |\n|-------|----------|-----------------|\n| A     | Free     | Simple UI        |\n| B     | Paid     | Advanced analytics |',
+      'Utilisateur : Génère un tableau comparatif.\nDonnées de contexte :\nOutil A : gratuit, interface simple\nOutil B : payant, analyses avancées\nSortie :\n| Outil | Prix    | Fonctionnalités       |\n|------|---------|------------------------|\n| A    | Gratuit | Interface simple       |\n| B    | Payant  | Analyses avancées      |',
 
       // 6) Generate a summary table of statistics
-      'User: Create a summary table of the following statistics.\nBackground data:\nSales Q1: 1200 units\nSales Q2: 1500 units\nSales Q3: 900 units\nOutput:\n| Quarter | Sales (units) |\n|----------|---------------|\n| Q1       | 1200          |\n| Q2       | 1500          |\n| Q3       | 900           |',
+      'Utilisateur : Crée un tableau récapitulatif.\nDonnées de contexte :\nVentes T1 : 1200 unités\nVentes T2 : 1500 unités\nVentes T3 : 900 unités\nSortie :\n| Trimestre | Ventes (unités) |\n|----------|------------------|\n| T1       | 1200             |\n| T2       | 1500             |\n| T3       | 900              |',
 
       // 7) Generate a question list
-      'User: Generate three reflection questions based on the paragraph.\nBackground data:\nThe article discusses the role of creativity in problem-solving and how diverse perspectives enhance innovation.\nOutput:\n1. How can creativity be encouraged in structured environments?\n2. What role does diversity play in innovative teams?\n3. How can leaders balance creativity and efficiency?',
+      'Utilisateur : Génère trois questions de réflexion.\nDonnées de contexte :\nL’article discute du rôle de la créativité dans la résolution de problèmes et de l’importance de la diversité pour l’innovation.\nSortie :\n1. Comment encourager la créativité dans un cadre structuré ?\n2. Quel rôle joue la diversité dans l’innovation ?\n3. Comment concilier créativité et efficacité ?',
 
       // 8) Explain a concept (selected phrase)
-      'User: Explain the meaning of the selected phrase.\nBackground data:\nDeep learning relies on neural networks to automatically extract patterns from data, a process called <Selection>feature learning</Selection>.\nOutput:\n"Feature learning" means automatically discovering useful representations or characteristics from raw data without manual intervention.',
+      'Utilisateur : Explique le sens de l’expression sélectionnée.\nDonnées de contexte :\nLe deep learning s’appuie sur des réseaux de neurones pour extraire automatiquement des motifs à partir des données : c’est ce qu’on appelle <Selection>feature learning</Selection>.\nSortie :\n« Feature learning » signifie apprendre automatiquement des représentations utiles à partir de données brutes, sans intervention manuelle.',
     ],
     history: formatTextFromMessages(messages),
     rules: dedent`
-      - <Selection> is the text highlighted by the user.
-      - backgroundData represents the user's current Markdown context.
-      - You may only use backgroundData and <Selection> as input; never ask for more data.
-      - CRITICAL: DO NOT remove or alter custom MDX tags such as <u>, <callout>, <kbd>, <toc>, <sub>, <sup>, <mark>, <del>, <date>, <span>, <column>, <column_group>, <file>, <audio>, <video> unless explicitly requested.
-      - CRITICAL: when writing Markdown or MDX, do NOT wrap output in code fences.
-      - Preserve indentation and line breaks when editing within columns or structured layouts.
+      - <Selection> correspond au texte surligné par l’utilisateur.
+      - backgroundData représente le contexte Markdown actuel.
+      - Tu ne dois utiliser que backgroundData et <Selection> ; ne demande jamais plus de données.
+      - CRITIQUE : ne supprime pas et ne modifie pas les balises MDX personnalisées (<u>, <callout>, <kbd>, <toc>, <sub>, <sup>, <mark>, <del>, <date>, <span>, <column>, <column_group>, <file>, <audio>, <video>) sauf demande explicite.
+      - CRITIQUE : en Markdown/MDX, n’entoure pas la sortie par des blocs de code.
+      - Préserve l’indentation et les retours à la ligne dans les mises en page structurées (colonnes, etc.).
     `,
     task: dedent`
-      You are an advanced content generation assistant.
-      Generate content based on the user's instructions, using the background data as context.
-      If the instruction requests creation or transformation (e.g., summarize, translate, rewrite, create a table), directly produce the final result using only the provided background data.
-      Do not ask the user for additional content.
+      Tu es un assistant de génération de contenu.
+      Génère du contenu à partir des consignes de l’utilisateur, en utilisant le contexte fourni (backgroundData).
+      Si la consigne demande une création ou une transformation (résumer, traduire, réécrire, faire un tableau, etc.), produis directement le résultat final en te basant uniquement sur backgroundData.
+      Ne demande pas de contenu supplémentaire.
     `,
   });
 }
@@ -232,7 +232,7 @@ export function getEditPrompt(
   { isSelecting, messages }: { isSelecting: boolean; messages: ChatMessage[] }
 ) {
   if (!isSelecting)
-    throw new Error('Edit tool is only available when selecting');
+    throw new Error('L’outil d’édition est disponible uniquement sur une sélection');
   if (isMultiBlocks(editor)) {
     const selectingMarkdown = getMarkdownWithSelection(editor);
 
@@ -240,25 +240,25 @@ export function getEditPrompt(
       backgroundData: selectingMarkdown,
       examples: [
         // 1) Fix grammar
-        'User: Fix grammar.\nbackgroundData: # User Guide\nThis guide explain how to install the app.\nOutput:\n# User Guide\nThis guide explains how to install the application.',
+        'Utilisateur : Corrige la grammaire.\nbackgroundData: # Guide utilisateur\nCe guide explique comment installer l’application.\nSortie :\n# Guide utilisateur\nCe guide explique comment installer l’application.',
 
         // 2) Make the tone more formal and professional
-        "User: Make the tone more formal and professional.\nbackgroundData: ## Intro\nHey, here's how you can set things up quickly.\nOutput:\n## Introduction\nThis section describes the setup procedure in a clear and professional manner.",
+        "Utilisateur : Adopte un ton plus formel et professionnel.\nbackgroundData: ## Intro\nSalut, voici comment tout configurer rapidement.\nSortie :\n## Introduction\nCette section décrit la procédure de configuration de manière claire et professionnelle.",
 
         // 3) Make it more concise without losing meaning
-        'User: Make it more concise without losing meaning.\nbackgroundData: The purpose of this document is to provide an overview that explains, in detail, all the steps required to complete the installation.\nOutput:\nThis document provides a detailed overview of the installation steps.',
+        'Utilisateur : Rends ce texte plus concis sans perdre le sens.\nbackgroundData: L’objectif de ce document est de fournir une vue d’ensemble qui explique en détail toutes les étapes nécessaires pour terminer l’installation.\nSortie :\nCe document présente en détail les étapes de l’installation.',
       ],
       history: formatTextFromMessages(messages),
       outputFormatting: 'markdown',
       rules: dedent`
-        - Do not Write <backgroundData> tags in your response.
-        - <backgroundData> represents the full blocks of text the user has selected and wants to modify or ask about.
-        - Your response should be a direct replacement for the entire <backgroundData>.
-        - Maintain the overall structure and formatting of the background data, unless explicitly instructed otherwise.
-        - CRITICAL: Provide only the content to replace <backgroundData>. Do not add additional blocks or change the block structure unless specifically requested.
+        - N’écris pas les balises <backgroundData> dans ta réponse.
+        - <backgroundData> contient tous les blocs sélectionnés que l’utilisateur veut modifier.
+        - Ta réponse doit remplacer directement l’intégralité de <backgroundData>.
+        - Conserve la structure et le format, sauf demande explicite.
+        - CRITIQUE : ne fournis que le contenu de remplacement. N’ajoute pas de blocs et ne change pas la structure des blocs sauf demande explicite.
       `,
-      task: `The following <backgroundData> is user-provided Markdown content that needs improvement. Modify it according to the user's instruction.
-      Unless explicitly stated otherwise, your output should be a seamless replacement of the original content.`,
+      task: `Le <backgroundData> suivant est un contenu Markdown fourni par l’utilisateur. Modifie-le selon sa consigne.
+      Sauf indication contraire, la sortie doit pouvoir remplacer l’original sans rupture.`,
     });
   }
 
@@ -272,46 +272,46 @@ export function getEditPrompt(
     backgroundData: selectingMarkdown,
     examples: [
       // 1) Improve word choice
-      'User: Improve word choice.\nbackgroundData: This is a <Selection>nice</Selection> person.\nOutput: great',
+      'Utilisateur : Améliore le choix des mots.\nbackgroundData: This is a <Selection>nice</Selection> person.\nSortie : great',
 
       // 2) Fix grammar
-      'User: Fix grammar.\nbackgroundData: He <Selection>go</Selection> to school every day.\nOutput: goes',
+      'Utilisateur : Corrige la grammaire.\nbackgroundData: He <Selection>go</Selection> to school every day.\nSortie : goes',
 
       // 3) Make tone more polite
-      'User: Make tone more polite.\nbackgroundData: <Selection>Give me</Selection> the report.\nOutput: Please provide',
+      'Utilisateur : Rends le ton plus poli.\nbackgroundData: <Selection>Give me</Selection> the report.\nSortie : Please provide',
 
       // 4) Make tone more confident
-      'User: Make tone more confident.\nbackgroundData: I <Selection>think</Selection> this might work.\nOutput: believe',
+      'Utilisateur : Rends le ton plus affirmé.\nbackgroundData: I <Selection>think</Selection> this might work.\nSortie : believe',
 
       // 5) Simplify language
-      'User: Simplify the language.\nbackgroundData: The results were <Selection>exceedingly</Selection> positive.\nOutput: very',
+      'Utilisateur : Simplifie le langage.\nbackgroundData: The results were <Selection>exceedingly</Selection> positive.\nSortie : very',
 
       // 6) Translate into French
-      'User: Translate into French.\nbackgroundData: <Selection>Hello</Selection>\nOutput: Bonjour',
+      'Utilisateur : Traduis en français.\nbackgroundData: <Selection>Hello</Selection>\nSortie : Bonjour',
 
       // 7) Expand description
-      'User: Expand the description.\nbackgroundData: The view was <Selection>beautiful</Selection>.\nOutput: breathtaking and full of vibrant colors',
+      'Utilisateur : Développe la description.\nbackgroundData: The view was <Selection>beautiful</Selection>.\nSortie : breathtaking and full of vibrant colors',
 
       // 8) Make it sound more natural
-      'User: Make it sound more natural.\nbackgroundData: She <Selection>did a party</Selection> yesterday.\nOutput: had a party',
+      'Utilisateur : Rends la formulation plus naturelle.\nbackgroundData: She <Selection>did a party</Selection> yesterday.\nSortie : had a party',
     ],
     history: formatTextFromMessages(messages),
     outputFormatting: 'markdown',
     prefilledResponse,
     rules: dedent`
-      - <Selection> contains the text segment selected by the user and allowed to be modified.
-      - Your response will be directly concatenated with the prefilledResponse, so please make sure the result is smooth and coherent.
-      - You may only edit the content inside <Selection> and must not reference or retain any external context.
-      - The output must be text that can directly replace <Selection>.
-      - Do not include the <Selection> tags or any surrounding text in the output.
-      - Ensure the replacement is grammatically correct and reads naturally.
-      - If the input is invalid or cannot be improved, return it unchanged.
+      - <Selection> contient le segment modifiable.
+      - Ta réponse sera concaténée à prefilledResponse : le résultat doit rester fluide et cohérent.
+      - Tu ne peux modifier que le contenu dans <Selection> et ne dois pas utiliser de contexte externe.
+      - La sortie doit pouvoir remplacer directement <Selection>.
+      - N’inclus pas les balises <Selection> ni le texte autour.
+      - La formulation doit être correcte et naturelle.
+      - Si l’entrée est invalide ou non améliorable, renvoie-la inchangée.
     `,
     task: dedent`
-      The following background data is user-provided text that contains one or more <Selection> tags marking the editable parts.
-      You must only modify the text inside <Selection>.
-      Your output should be a direct replacement for the selected text, without including any tags or surrounding content.
-      Ensure the replacement is grammatically correct and fits naturally when substituted back into the original text.
+      Le backgroundData suivant contient une ou plusieurs balises <Selection> qui marquent les parties éditables.
+      Tu dois uniquement modifier le texte dans <Selection>.
+      Ta sortie doit remplacer directement la sélection, sans balises ni texte autour.
+      Le remplacement doit être correct et s’intégrer naturellement dans le texte d’origine.
     `,
   });
 }

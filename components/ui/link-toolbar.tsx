@@ -107,7 +107,7 @@ export function LinkFloatingToolbar({
 
         <FloatingLinkUrlInput
           className={inputVariants()}
-          placeholder="Paste link"
+          placeholder="Coller le lien"
           data-plate-focus
         />
       </div>
@@ -118,7 +118,7 @@ export function LinkFloatingToolbar({
         </div>
         <input
           className={inputVariants()}
-          placeholder="Text to display"
+          placeholder="Texte du lien"
           data-plate-focus
           {...textInputProps}
         />
@@ -135,7 +135,7 @@ export function LinkFloatingToolbar({
         type="button"
         {...editButtonProps}
       >
-        Edit link
+        Modifier le lien
       </button>
 
       <Separator orientation="vertical" />
@@ -199,7 +199,7 @@ function LinkOpenButton() {
       onMouseOver={(e) => {
         e.stopPropagation();
       }}
-      aria-label="Open link in a new tab"
+      aria-label="Ouvrir le lien dans un nouvel onglet"
       target="_blank"
     >
       <ExternalLink width={18} />

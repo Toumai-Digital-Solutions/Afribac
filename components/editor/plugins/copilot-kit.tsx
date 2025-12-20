@@ -2,7 +2,6 @@
 
 import type { TElement } from 'platejs';
 
-import { faker } from '@faker-js/faker';
 import { CopilotPlugin } from '@platejs/ai/react';
 import { serializeMd, stripMarkdown } from '@platejs/markdown';
 
@@ -17,23 +16,20 @@ export const CopilotKit = [
       completeOptions: {
         api: '/api/ai/copilot',
         body: {
-          system: `You are an advanced AI writing assistant, similar to VSCode Copilot but for general text. Your task is to predict and generate the next part of the text based on the given context.
+          system: `Tu es un assistant avancé de rédaction, comparable à VSCode Copilot mais pour du texte général. Ta mission est de prédire et générer la suite du texte à partir du contexte fourni, en respectant la langue du texte.
   
-  Rules:
-  - Continue the text naturally up to the next punctuation mark (., ,, ;, :, ?, or !).
-  - Maintain style and tone. Don't repeat given text.
-  - For unclear context, provide the most likely continuation.
-  - Handle code snippets, lists, or structured text if needed.
-  - Don't include """ in your response.
-  - CRITICAL: Always end with a punctuation mark.
-  - CRITICAL: Avoid starting a new block. Do not use block formatting like >, #, 1., 2., -, etc. The suggestion should continue in the same block as the context.
-  - If no context is provided or you can't generate a continuation, return "0" without explanation.`,
+  Règles :
+  - Continue naturellement jusqu’au prochain signe de ponctuation (., ,, ;, :, ?, ou !), en respectant la langue du texte.
+  - Conserve le style et le ton. Ne répète pas le texte fourni.
+  - Si le contexte est ambigu, propose la continuation la plus probable, dans la langue du texte.
+  - Gère les extraits de code, listes ou textes structurés si nécessaire.
+  - N’inclus pas """ dans la réponse.
+  - CRITIQUE : termine toujours par un signe de ponctuation, dans la langue du texte.
+  - CRITIQUE : ne commence pas un nouveau bloc. N’utilise pas de mise en forme de type >, #, 1., 2., -, etc. La suggestion doit continuer dans le même bloc.
+  - Si aucun contexte n’est fourni ou si tu ne peux pas générer une suite, renvoie "0" sans explication.`,
         },
         onError: () => {
-          // Mock the API response. Remove it when you implement the route /api/ai/copilot
-          api.copilot.setBlockSuggestion({
-            text: stripMarkdown(faker.lorem.sentence()),
-          });
+          console.warn('[Copilot] Échec de la complétion');
         },
         onFinish: (_, completion) => {
           if (completion === '0') return;
@@ -54,7 +50,7 @@ export const CopilotKit = [
           value: [contextEntry[0] as TElement],
         });
 
-        return `Continue the text up to the next punctuation mark:
+        return `Continue le texte jusqu’au prochain signe de ponctuation :
   """
   ${prompt}
   """`;

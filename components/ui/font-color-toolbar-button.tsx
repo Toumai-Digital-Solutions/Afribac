@@ -148,7 +148,7 @@ function PureColorPicker({
 }) {
   return (
     <div className={cn('flex flex-col', className)} {...props}>
-      <ToolbarMenuGroup label="Custom Colors">
+      <ToolbarMenuGroup label="Couleurs personnalisées">
         <ColorCustom
           color={color}
           className="px-2"
@@ -158,7 +158,7 @@ function PureColorPicker({
           updateCustomColor={updateCustomColor}
         />
       </ToolbarMenuGroup>
-      <ToolbarMenuGroup label="Default Colors">
+      <ToolbarMenuGroup label="Couleurs par défaut">
         <ColorDropdownMenuItems
           color={color}
           className="px-2"
@@ -170,7 +170,7 @@ function PureColorPicker({
         <ToolbarMenuGroup>
           <DropdownMenuItem className="p-2" onClick={clearColor}>
             <EraserIcon />
-            <span>Clear</span>
+            <span>Effacer</span>
           </DropdownMenuItem>
         </ToolbarMenuGroup>
       )}

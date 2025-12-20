@@ -280,7 +280,7 @@ export function AIMenu() {
           {isLoading ? (
             <div className="flex grow select-none items-center gap-2 p-2 text-muted-foreground text-sm">
               <Loader2Icon className="size-4 animate-spin" />
-              {messages.length > 1 ? 'Editing...' : 'Thinking...'}
+              {messages.length > 1 ? 'Modification…' : 'Réflexion…'}
             </div>
           ) : (
             <CommandPrimitive.Input
@@ -302,7 +302,7 @@ export function AIMenu() {
                 }
               }}
               onValueChange={setInput}
-              placeholder="Ask AI anything..."
+              placeholder="Demandez à l’IA…"
               data-plate-focus
               autoFocus
             />
@@ -352,7 +352,7 @@ const AICommentIcon = () => (
 const aiChatItems = {
   accept: {
     icon: <Check />,
-    label: 'Accept',
+    label: 'Accepter',
     value: 'accept',
     onSelect: ({ aiEditor, editor }) => {
       const { mode, toolName } = editor.getOptions(AIChatPlugin);
@@ -369,20 +369,20 @@ const aiChatItems = {
   },
   comment: {
     icon: <AICommentIcon />,
-    label: 'Comment',
+    label: 'Commenter',
     value: 'comment',
     onSelect: ({ editor, input }) => {
       editor.getApi(AIChatPlugin).aiChat.submit(input, {
         mode: 'insert',
         prompt:
-          'Please comment on the following content and provide reasonable and meaningful feedback.',
+          'Commente le contenu et donne un retour clair, utile et bienveillant (niveau bac).',
         toolName: 'comment',
       });
     },
   },
   continueWrite: {
     icon: <PenLine />,
-    label: 'Continue writing',
+    label: 'Continuer la rédaction',
     value: 'continueWrite',
     onSelect: ({ editor, input }) => {
       const ancestorNode = editor.api.block({ highest: true });
@@ -394,19 +394,16 @@ const aiChatItems = {
       void editor.getApi(AIChatPlugin).aiChat.submit(input, {
         mode: 'insert',
         prompt: isEmpty
-          ? `<Document>
-{editor}
-</Document>
-Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
-          : 'Continue writing AFTER <Block> ONLY ONE SENTENCE. DONT REPEAT THE TEXT.',
+          ? 'Commence un nouveau paragraphe (niveau bac) en une seule phrase.'
+          : 'Continue la rédaction en une seule phrase, sans répéter le texte déjà présent.',
         toolName: 'generate',
       });
     },
   },
   discard: {
     icon: <X />,
-    label: 'Discard',
-    shortcut: 'Escape',
+    label: 'Annuler',
+    shortcut: 'Échap',
     value: 'discard',
     onSelect: ({ editor }) => {
       editor.getTransforms(AIPlugin).ai.undo();
@@ -415,87 +412,143 @@ Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
   },
   fixEquation: {
     icon: <RadicalIcon />,
-    label: 'Fix equation',
+    label: 'Corriger l’équation',
     value: 'fixEquation',
     onSelect: ({ editor, input }) => {
       void editor.getApi(AIChatPlugin).aiChat.submit(input, {
-        prompt: 'Fix the latex expression',
+        prompt: 'Corrige l’expression LaTeX (sans changer le sens).',
         toolName: 'edit',
       });
     },
   },
   emojify: {
     icon: <SmileIcon />,
-    label: 'Emojify',
+    label: 'Ajouter des emojis',
     value: 'emojify',
     onSelect: ({ editor, input }) => {
       void editor.getApi(AIChatPlugin).aiChat.submit(input, {
-        prompt: 'Emojify',
+        prompt: 'Ajoute quelques emojis (avec parcimonie) sans changer le sens.',
         toolName: 'edit',
       });
     },
   },
   explain: {
     icon: <BadgeHelp />,
-    label: 'Explain',
+    label: 'Expliquer',
     value: 'explain',
     onSelect: ({ editor, input }) => {
       void editor.getApi(AIChatPlugin).aiChat.submit(input, {
         prompt: {
-          default: 'Explain {editor}',
-          selecting: 'Explain',
+          default: 'Explique clairement (niveau bac).',
+          selecting: 'Explique clairement la sélection (niveau bac).',
         },
+        toolName: 'generate',
+      });
+    },
+  },
+  ficheRevision: {
+    icon: <BookOpenCheck />,
+    label: 'Fiche de révision',
+    value: 'ficheRevision',
+    onSelect: ({ editor, input }) => {
+      void editor.getApi(AIChatPlugin).aiChat.submit(input, {
+        mode: 'insert',
+        prompt:
+          'Rédige une fiche de révision niveau bac: notions clés, définitions, méthode, exemples, pièges à éviter.',
+        toolName: 'generate',
+      });
+    },
+  },
+  quiz: {
+    icon: <BookOpenCheck />,
+    label: 'Créer un QCM',
+    value: 'quiz',
+    onSelect: ({ editor, input }) => {
+      void editor.getApi(AIChatPlugin).aiChat.submit(input, {
+        mode: 'insert',
+        prompt:
+          'Crée un QCM niveau bac (10 questions) basé sur le contenu. Format: question, A/B/C/D, bonne réponse, explication courte.',
+        toolName: 'generate',
+      });
+    },
+  },
+  flashcards: {
+    icon: <Album />,
+    label: 'Flashcards',
+    value: 'flashcards',
+    onSelect: ({ editor, input }) => {
+      void editor.getApi(AIChatPlugin).aiChat.submit(input, {
+        mode: 'insert',
+        prompt:
+          'Crée 10 flashcards niveau bac (format: Recto / Verso) basées sur le contenu.',
+        toolName: 'generate',
+      });
+    },
+  },
+  exercices: {
+    icon: <PenLine />,
+    label: 'Créer des exercices',
+    value: 'exercices',
+    onSelect: ({ editor, input }) => {
+      void editor.getApi(AIChatPlugin).aiChat.submit(input, {
+        mode: 'insert',
+        prompt:
+          'Crée 5 exercices niveau bac (progressifs) basés sur le contenu, avec consigne + corrigé succinct.',
+        toolName: 'generate',
+      });
+    },
+  },
+  questions: {
+    icon: <BadgeHelp />,
+    label: 'Questions de compréhension',
+    value: 'questions',
+    onSelect: ({ editor, input }) => {
+      void editor.getApi(AIChatPlugin).aiChat.submit(input, {
+        mode: 'insert',
+        prompt:
+          'Génère 8 questions de compréhension niveau bac (mélange: définitions, application, analyse) avec réponses.',
+        toolName: 'generate',
+      });
+    },
+  },
+  sujetBac: {
+    icon: <BookOpenCheck />,
+    label: 'Sujet type bac',
+    value: 'sujetBac',
+    onSelect: ({ editor, input }) => {
+      void editor.getApi(AIChatPlugin).aiChat.submit(input, {
+        mode: 'insert',
+        prompt:
+          'Propose un sujet type bac basé sur le contenu (consigne + attentes + axes possibles).',
         toolName: 'generate',
       });
     },
   },
   fixSpelling: {
     icon: <Check />,
-    label: 'Fix spelling & grammar',
+    label: 'Corriger orthographe et grammaire',
     value: 'fixSpelling',
     onSelect: ({ editor, input }) => {
       void editor.getApi(AIChatPlugin).aiChat.submit(input, {
-        prompt: 'Fix spelling and grammar',
+        prompt: 'Corrige l’orthographe, la grammaire et la ponctuation.',
         toolName: 'edit',
-      });
-    },
-  },
-  generateMarkdownSample: {
-    icon: <BookOpenCheck />,
-    label: 'Generate Markdown sample',
-    value: 'generateMarkdownSample',
-    onSelect: ({ editor, input }) => {
-      void editor.getApi(AIChatPlugin).aiChat.submit(input, {
-        prompt: 'Generate a markdown sample',
-        toolName: 'generate',
-      });
-    },
-  },
-  generateMdxSample: {
-    icon: <BookOpenCheck />,
-    label: 'Generate MDX sample',
-    value: 'generateMdxSample',
-    onSelect: ({ editor, input }) => {
-      void editor.getApi(AIChatPlugin).aiChat.submit(input, {
-        prompt: 'Generate a mdx sample',
-        toolName: 'generate',
       });
     },
   },
   improveWriting: {
     icon: <Wand />,
-    label: 'Improve writing',
+    label: 'Améliorer le style',
     value: 'improveWriting',
     onSelect: ({ editor, input }) => {
       void editor.getApi(AIChatPlugin).aiChat.submit(input, {
-        prompt: 'Improve the writing',
+        prompt: 'Améliore le style (clarté, fluidité) sans changer le sens.',
         toolName: 'edit',
       });
     },
   },
   insertBelow: {
     icon: <ListEnd />,
-    label: 'Insert below',
+    label: 'Insérer en dessous',
     value: 'insertBelow',
     onSelect: ({ aiEditor, editor }) => {
       /** Format: 'none' Fix insert table */
@@ -506,29 +559,29 @@ Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
   },
   makeLonger: {
     icon: <ListPlus />,
-    label: 'Make longer',
+    label: 'Allonger',
     value: 'makeLonger',
     onSelect: ({ editor, input }) => {
       void editor.getApi(AIChatPlugin).aiChat.submit(input, {
-        prompt: 'Make longer',
+        prompt: 'Allonge le texte en ajoutant des détails utiles (niveau bac).',
         toolName: 'edit',
       });
     },
   },
   makeShorter: {
     icon: <ListMinus />,
-    label: 'Make shorter',
+    label: 'Raccourcir',
     value: 'makeShorter',
     onSelect: ({ editor, input }) => {
       void editor.getApi(AIChatPlugin).aiChat.submit(input, {
-        prompt: 'Make shorter',
+        prompt: 'Raccourcis sans perdre l’essentiel.',
         toolName: 'edit',
       });
     },
   },
   replace: {
     icon: <Check />,
-    label: 'Replace selection',
+    label: 'Remplacer la sélection',
     value: 'replace',
     onSelect: ({ aiEditor, editor }) => {
       void editor.getTransforms(AIChatPlugin).aiChat.replaceSelection(aiEditor);
@@ -536,25 +589,25 @@ Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
   },
   simplifyLanguage: {
     icon: <FeatherIcon />,
-    label: 'Simplify language',
+    label: 'Simplifier',
     value: 'simplifyLanguage',
     onSelect: ({ editor, input }) => {
       void editor.getApi(AIChatPlugin).aiChat.submit(input, {
-        prompt: 'Simplify the language',
+        prompt: 'Simplifie la formulation sans perdre le sens.',
         toolName: 'edit',
       });
     },
   },
   summarize: {
     icon: <Album />,
-    label: 'Add a summary',
+    label: 'Ajouter un résumé',
     value: 'summarize',
     onSelect: ({ editor, input }) => {
       void editor.getApi(AIChatPlugin).aiChat.submit(input, {
         mode: 'insert',
         prompt: {
-          default: 'Summarize {editor}',
-          selecting: 'Summarize',
+          default: 'Rédige un résumé clair et structuré (niveau bac).',
+          selecting: 'Rédige un résumé clair de la sélection (niveau bac).',
         },
         toolName: 'generate',
       });
@@ -562,7 +615,7 @@ Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
   },
   tryAgain: {
     icon: <CornerUpLeft />,
-    label: 'Try again',
+    label: 'Réessayer',
     value: 'tryAgain',
     onSelect: ({ editor }) => {
       void editor.getApi(AIChatPlugin).aiChat.reload();
@@ -600,12 +653,16 @@ const menuStateItems: Record<
   cursorCommand: [
     {
       items: [
+        aiChatItems.ficheRevision,
+        aiChatItems.quiz,
+        aiChatItems.flashcards,
+        aiChatItems.exercices,
+        aiChatItems.questions,
         aiChatItems.comment,
-        aiChatItems.generateMdxSample,
-        aiChatItems.generateMarkdownSample,
         aiChatItems.continueWrite,
         aiChatItems.summarize,
         aiChatItems.explain,
+        aiChatItems.sujetBac,
       ],
     },
   ],
@@ -617,6 +674,11 @@ const menuStateItems: Record<
   selectionCommand: [
     {
       items: [
+        aiChatItems.quiz,
+        aiChatItems.flashcards,
+        aiChatItems.exercices,
+        aiChatItems.questions,
+        aiChatItems.summarize,
         aiChatItems.improveWriting,
         aiChatItems.comment,
         aiChatItems.fixEquation,
@@ -752,7 +814,7 @@ export function AILoadingBar() {
         )}
       >
         <span className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-        <span>{status === 'submitted' ? 'Thinking...' : 'Writing...'}</span>
+        <span>{status === 'submitted' ? 'Réflexion…' : 'Rédaction…'}</span>
         <Button
           size="sm"
           variant="ghost"
@@ -760,7 +822,7 @@ export function AILoadingBar() {
           onClick={() => api.aiChat.stop()}
         >
           <PauseIcon className="h-4 w-4" />
-          Stop
+          Arrêter
           <kbd className="ml-1 rounded bg-border px-1 font-mono text-[10px] text-muted-foreground shadow-sm">
             Esc
           </kbd>
@@ -785,7 +847,7 @@ export function AILoadingBar() {
               disabled={isLoading}
               onClick={() => handleComments('accept')}
             >
-              Accept
+              Accepter
             </Button>
 
             <Button
@@ -793,7 +855,7 @@ export function AILoadingBar() {
               disabled={isLoading}
               onClick={() => handleComments('reject')}
             >
-              Reject
+              Rejeter
             </Button>
           </div>
         </div>

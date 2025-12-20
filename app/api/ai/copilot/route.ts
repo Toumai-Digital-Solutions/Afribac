@@ -7,6 +7,9 @@ import { NextResponse } from 'next/server';
 
 type Provider = 'openai' | 'gemini';
 
+const DEFAULT_GEMINI_MODEL = 'gemini-2.0-flash';
+const DEFAULT_OPENAI_MODEL = 'gpt-4o-mini';
+
 const normalizeProviderAndModel = ({
   model,
   provider,
@@ -56,6 +59,7 @@ const normalizeProviderAndModel = ({
 };
 
 export async function POST(req: NextRequest) {
+  console.log('[AI Copilot] Request received');
   const {
     model,
     prompt,
@@ -63,13 +67,26 @@ export async function POST(req: NextRequest) {
     system,
   } = await req.json();
 
+  console.log('[AI Copilot] Provider:', provider, 'Model:', model);
+  console.log('[AI Copilot] Prompt length:', prompt?.length ?? 0);
+
   // Check for at least one API key
   const hasGeminiKey = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY;
   const hasOpenAIKey = !!process.env.OPENAI_API_KEY;
 
+  console.log(
+    '[AI Copilot] API Keys - Gemini:',
+    hasGeminiKey,
+    'OpenAI:',
+    hasOpenAIKey
+  );
+
   if (!hasGeminiKey && !hasOpenAIKey) {
     return NextResponse.json(
-      { error: 'Missing AI API key. Set GOOGLE_GENERATIVE_AI_API_KEY or OPENAI_API_KEY.' },
+      {
+        error:
+          'Clé API IA manquante. Définissez GOOGLE_GENERATIVE_AI_API_KEY ou OPENAI_API_KEY.',
+      },
       { status: 401 }
     );
   }
@@ -82,14 +99,30 @@ export async function POST(req: NextRequest) {
       hasOpenAIKey,
     });
 
+  const resolvedModel =
+    effectiveModel ||
+    (effectiveProvider === 'gemini'
+      ? DEFAULT_GEMINI_MODEL
+      : DEFAULT_OPENAI_MODEL);
+
+  console.log(
+    '[AI Copilot] Effective provider:',
+    effectiveProvider,
+    'Model:',
+    effectiveModel,
+    'Resolved model:',
+    resolvedModel
+  );
+
   // Create the appropriate model
-  const aiModel = effectiveProvider === 'gemini'
-    ? createGoogleGenerativeAI({
-        apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-      })(effectiveModel || 'gemini-2.0-flash')
-    : createOpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
-      })(effectiveModel || 'gpt-4o-mini');
+  const aiModel =
+    effectiveProvider === 'gemini'
+      ? createGoogleGenerativeAI({
+          apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+        })(resolvedModel)
+      : createOpenAI({
+          apiKey: process.env.OPENAI_API_KEY,
+        })(resolvedModel);
 
   try {
     const result = await generateText({
@@ -108,7 +141,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: 'Failed to process AI request' },
+      { error: 'Échec du traitement de la requête IA' },
       { status: 500 }
     );
   }

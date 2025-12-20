@@ -64,7 +64,7 @@ export function FixedToolbarButtons({ extraLeftGroups }: FixedToolbarButtonsProp
           </ToolbarGroup>
 
           <ToolbarGroup>
-            <AIToolbarButton tooltip="AI commands">
+            <AIToolbarButton tooltip="Commandes IA">
               <WandSparklesIcon />
             </AIToolbarButton>
           </ToolbarGroup>
@@ -84,24 +84,24 @@ export function FixedToolbarButtons({ extraLeftGroups }: FixedToolbarButtonsProp
           </ToolbarGroup>
 
           <ToolbarGroup>
-            <MarkToolbarButton nodeType={KEYS.bold} tooltip="Bold (⌘+B)">
+            <MarkToolbarButton nodeType={KEYS.bold} tooltip="Gras (⌘+B)">
               <BoldIcon />
             </MarkToolbarButton>
 
-            <MarkToolbarButton nodeType={KEYS.italic} tooltip="Italic (⌘+I)">
+            <MarkToolbarButton nodeType={KEYS.italic} tooltip="Italique (⌘+I)">
               <ItalicIcon />
             </MarkToolbarButton>
 
             <MarkToolbarButton
               nodeType={KEYS.underline}
-              tooltip="Underline (⌘+U)"
+              tooltip="Souligné (⌘+U)"
             >
               <UnderlineIcon />
             </MarkToolbarButton>
 
             <MarkToolbarButton
               nodeType={KEYS.strikethrough}
-              tooltip="Strikethrough (⌘+⇧+M)"
+              tooltip="Barré (⌘+⇧+M)"
             >
               <StrikethroughIcon />
             </MarkToolbarButton>
@@ -110,13 +110,13 @@ export function FixedToolbarButtons({ extraLeftGroups }: FixedToolbarButtonsProp
               <Code2Icon />
             </MarkToolbarButton>
 
-            <FontColorToolbarButton nodeType={KEYS.color} tooltip="Text color">
+            <FontColorToolbarButton nodeType={KEYS.color} tooltip="Couleur du texte">
               <BaselineIcon />
             </FontColorToolbarButton>
 
             <FontColorToolbarButton
               nodeType={KEYS.backgroundColor}
-              tooltip="Background color"
+              tooltip="Couleur de fond"
             >
               <PaintBucketIcon />
             </FontColorToolbarButton>
@@ -161,7 +161,7 @@ export function FixedToolbarButtons({ extraLeftGroups }: FixedToolbarButtonsProp
       <div className="grow" />
 
       <ToolbarGroup>
-        <MarkToolbarButton nodeType={KEYS.highlight} tooltip="Highlight">
+        <MarkToolbarButton nodeType={KEYS.highlight} tooltip="Surligner">
           <HighlighterIcon />
         </MarkToolbarButton>
         <CommentToolbarButton />

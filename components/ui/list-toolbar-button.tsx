@@ -69,7 +69,7 @@ export function BulletedListToolbarButton() {
             >
               <div className="flex items-center gap-2">
                 <div className="size-2 rounded-full border border-current bg-current" />
-                Default
+                Par défaut
               </div>
             </DropdownMenuItem>
             <DropdownMenuItem
@@ -81,7 +81,7 @@ export function BulletedListToolbarButton() {
             >
               <div className="flex items-center gap-2">
                 <div className="size-2 rounded-full border border-current" />
-                Circle
+                Cercle
               </div>
             </DropdownMenuItem>
             <DropdownMenuItem
@@ -93,7 +93,7 @@ export function BulletedListToolbarButton() {
             >
               <div className="flex items-center gap-2">
                 <div className="size-2 border border-current bg-current" />
-                Square
+                Carré
               </div>
             </DropdownMenuItem>
           </DropdownMenuGroup>
@@ -147,7 +147,7 @@ export function NumberedListToolbarButton() {
                 })
               }
             >
-              Decimal (1, 2, 3)
+              Décimal (1, 2, 3)
             </DropdownMenuItem>
             <DropdownMenuItem
               onSelect={() =>
@@ -156,7 +156,7 @@ export function NumberedListToolbarButton() {
                 })
               }
             >
-              Lower Alpha (a, b, c)
+              Alphabet (a, b, c)
             </DropdownMenuItem>
             <DropdownMenuItem
               onSelect={() =>
@@ -165,7 +165,7 @@ export function NumberedListToolbarButton() {
                 })
               }
             >
-              Upper Alpha (A, B, C)
+              Alphabet (A, B, C)
             </DropdownMenuItem>
             <DropdownMenuItem
               onSelect={() =>
@@ -174,7 +174,7 @@ export function NumberedListToolbarButton() {
                 })
               }
             >
-              Lower Roman (i, ii, iii)
+              Romain (i, ii, iii)
             </DropdownMenuItem>
             <DropdownMenuItem
               onSelect={() =>
@@ -183,7 +183,7 @@ export function NumberedListToolbarButton() {
                 })
               }
             >
-              Upper Roman (I, II, III)
+              Romain (I, II, III)
             </DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>
@@ -199,7 +199,7 @@ export function TodoListToolbarButton(
   const { props: buttonProps } = useIndentTodoToolBarButton(state);
 
   return (
-    <ToolbarButton {...props} {...buttonProps} tooltip="Todo">
+    <ToolbarButton {...props} {...buttonProps} tooltip="Liste de tâches">
       <ListTodoIcon />
     </ToolbarButton>
   );

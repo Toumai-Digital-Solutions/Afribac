@@ -1,14 +1,14 @@
 import { google } from '@ai-sdk/google';
 import { streamText } from 'ai';
 
-export const maxDuration = 120; // Allow up to 60 seconds for processing
+export const maxDuration = 120; // Autorise jusqu’à 120 secondes de traitement
 
 export async function POST(req: Request) {
   try {
     const { images } = await req.json();
 
     if (!images || !Array.isArray(images) || images.length === 0) {
-      return new Response('No images provided', { status: 400 });
+      return new Response('Aucune image fournie', { status: 400 });
     }
 
     const result = streamText({
@@ -16,7 +16,8 @@ export async function POST(req: Request) {
       messages: [
         {
           role: 'system',
-          content: 'You are an expert document digitizer. Transcribe the following document page into clean HTML without any css code. Use standard tags like <h1>, <p>, <ul>, <table>. Use LaTeX for math formulas (wrapped in $ or $$). Do not add any conversational text, just the HTML content. Also i want a good formatting of the text, so use proper indentation and line breaks. Ignore the page number',
+          content:
+            "Tu es un expert de la numérisation de documents. Transcris cette page en HTML propre, sans CSS. Utilise des balises standard (<h1>, <p>, <ul>, <table>). Utilise du LaTeX pour les formules (entre $ ou $$). N’ajoute aucun texte conversationnel : uniquement le contenu HTML. Le rendu doit être bien mis en forme (indentation et retours à la ligne). Ignore les numéros de page.",
         },
         {
           role: 'user',
@@ -31,6 +32,6 @@ export async function POST(req: Request) {
     return result.toTextStreamResponse();
   } catch (error) {
     console.error('Error in extract-pdf:', error);
-    return new Response('Internal Server Error', { status: 500 });
+    return new Response('Erreur interne du serveur', { status: 500 });
   }
 }

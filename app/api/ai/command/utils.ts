@@ -110,32 +110,32 @@ export const buildStructuredPrompt = ({
 
     backgroundData &&
       dedent`
-        Here is the background data you should reference when answering the user:
+        Voici les données de contexte à utiliser pour répondre à l’utilisateur :
         <backgroundData>
               ${backgroundData}
         </backgroundData>
       `,
     rules &&
       dedent`
-        Here are some important rules for the interaction:
+        Règles importantes pour l’interaction :
             ${rules}
       `,
 
     formattedExamples &&
       dedent`
-        Here are some examples of how to respond in a standard interaction:
+        Exemples de réponses attendues :
               ${tag('examples', formattedExamples)}
       `,
 
     history &&
       dedent`
-        Here is the conversation history (between the user and you) prior to the question:
+        Historique de la conversation (avant la question) :
               ${tag('history', history)}
       `,
 
     question &&
       dedent`
-        Here is the user's question:
+        Question de l’utilisateur :
               ${tag('question', question)}
       `,
   ]);

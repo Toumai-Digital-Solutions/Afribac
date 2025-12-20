@@ -43,67 +43,67 @@ export const turnIntoItems = [
   {
     icon: <PilcrowIcon />,
     keywords: ['paragraph'],
-    label: 'Text',
+    label: 'Texte',
     value: KEYS.p,
   },
   {
     icon: <Heading1Icon />,
     keywords: ['title', 'h1'],
-    label: 'Heading 1',
+    label: 'Titre 1',
     value: 'h1',
   },
   {
     icon: <Heading2Icon />,
     keywords: ['subtitle', 'h2'],
-    label: 'Heading 2',
+    label: 'Titre 2',
     value: 'h2',
   },
   {
     icon: <Heading3Icon />,
     keywords: ['subtitle', 'h3'],
-    label: 'Heading 3',
+    label: 'Titre 3',
     value: 'h3',
   },
   {
     icon: <Heading4Icon />,
     keywords: ['subtitle', 'h4'],
-    label: 'Heading 4',
+    label: 'Titre 4',
     value: 'h4',
   },
   {
     icon: <Heading5Icon />,
     keywords: ['subtitle', 'h5'],
-    label: 'Heading 5',
+    label: 'Titre 5',
     value: 'h5',
   },
   {
     icon: <Heading6Icon />,
     keywords: ['subtitle', 'h6'],
-    label: 'Heading 6',
+    label: 'Titre 6',
     value: 'h6',
   },
   {
     icon: <ListIcon />,
     keywords: ['unordered', 'ul', '-'],
-    label: 'Bulleted list',
+    label: 'Liste à puces',
     value: KEYS.ul,
   },
   {
     icon: <ListOrderedIcon />,
     keywords: ['ordered', 'ol', '1'],
-    label: 'Numbered list',
+    label: 'Liste numérotée',
     value: KEYS.ol,
   },
   {
     icon: <SquareIcon />,
     keywords: ['checklist', 'task', 'checkbox', '[]'],
-    label: 'To-do list',
+    label: 'Liste de tâches',
     value: KEYS.listTodo,
   },
   {
     icon: <ChevronRightIcon />,
     keywords: ['collapsible', 'expandable'],
-    label: 'Toggle list',
+    label: 'Liste repliable',
     value: KEYS.toggle,
   },
   {
@@ -115,12 +115,12 @@ export const turnIntoItems = [
   {
     icon: <QuoteIcon />,
     keywords: ['citation', 'blockquote', '>'],
-    label: 'Quote',
+    label: 'Citation',
     value: KEYS.blockquote,
   },
   {
     icon: <Columns3Icon />,
-    label: '3 columns',
+    label: '3 colonnes',
     value: 'action_three_columns',
   },
 ];
@@ -146,7 +146,7 @@ export function TurnIntoToolbarButton(props: DropdownMenuProps) {
         <ToolbarButton
           className="min-w-[125px]"
           pressed={open}
-          tooltip="Turn into"
+          tooltip="Transformer en"
           isDropdown
         >
           {selectedItem.label}
@@ -166,7 +166,7 @@ export function TurnIntoToolbarButton(props: DropdownMenuProps) {
           onValueChange={(type) => {
             setBlockType(editor, type);
           }}
-          label="Turn into"
+          label="Transformer en"
         >
           {turnIntoItems.map(({ icon, label, value: itemValue }) => (
             <DropdownMenuRadioItem

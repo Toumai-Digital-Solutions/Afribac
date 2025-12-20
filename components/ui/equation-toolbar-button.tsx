@@ -19,7 +19,7 @@ export function InlineEquationToolbarButton(
       onClick={() => {
         insertInlineEquation(editor);
       }}
-      tooltip="Mark as equation"
+      tooltip="Insérer une équation"
     >
       <RadicalIcon />
     </ToolbarButton>

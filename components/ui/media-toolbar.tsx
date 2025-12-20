@@ -87,7 +87,7 @@ export function MediaToolbar({
 
               <FloatingMediaPrimitive.UrlInput
                 className={inputVariants()}
-                placeholder="Paste the embed link..."
+                placeholder="Coller le lien d’intégration…"
                 options={{ plugin }}
               />
             </div>
@@ -97,11 +97,11 @@ export function MediaToolbar({
             <FloatingMediaPrimitive.EditButton
               className={buttonVariants({ size: 'sm', variant: 'ghost' })}
             >
-              Edit link
+              Modifier le lien
             </FloatingMediaPrimitive.EditButton>
 
             <CaptionButton size="sm" variant="ghost">
-              Caption
+              Légende
             </CaptionButton>
 
             <Separator orientation="vertical" className="mx-1 h-6" />

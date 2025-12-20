@@ -114,7 +114,7 @@ export function BlockContextMenu({ children }: { children: React.ReactNode }) {
                 setValue('askAI');
               }}
             >
-              Ask AI
+              Demander à l’IA
             </ContextMenuItem>
             <ContextMenuItem
               onClick={() => {
@@ -124,7 +124,7 @@ export function BlockContextMenu({ children }: { children: React.ReactNode }) {
                 editor.tf.focus();
               }}
             >
-              Delete
+              Supprimer
             </ContextMenuItem>
             <ContextMenuItem
               onClick={() => {
@@ -133,29 +133,29 @@ export function BlockContextMenu({ children }: { children: React.ReactNode }) {
                   .blockSelection.duplicate();
               }}
             >
-              Duplicate
+              Dupliquer
               {/* <ContextMenuShortcut>⌘ + D</ContextMenuShortcut> */}
             </ContextMenuItem>
             <ContextMenuSub>
-              <ContextMenuSubTrigger>Turn into</ContextMenuSubTrigger>
+              <ContextMenuSubTrigger>Transformer en</ContextMenuSubTrigger>
               <ContextMenuSubContent className="w-48">
                 <ContextMenuItem onClick={() => handleTurnInto(KEYS.p)}>
-                  Paragraph
+                  Paragraphe
                 </ContextMenuItem>
 
                 <ContextMenuItem onClick={() => handleTurnInto(KEYS.h1)}>
-                  Heading 1
+                  Titre 1
                 </ContextMenuItem>
                 <ContextMenuItem onClick={() => handleTurnInto(KEYS.h2)}>
-                  Heading 2
+                  Titre 2
                 </ContextMenuItem>
                 <ContextMenuItem onClick={() => handleTurnInto(KEYS.h3)}>
-                  Heading 3
+                  Titre 3
                 </ContextMenuItem>
                 <ContextMenuItem
                   onClick={() => handleTurnInto(KEYS.blockquote)}
                 >
-                  Blockquote
+                  Citation
                 </ContextMenuItem>
               </ContextMenuSubContent>
             </ContextMenuSub>
@@ -169,7 +169,7 @@ export function BlockContextMenu({ children }: { children: React.ReactNode }) {
                   .blockSelection.setIndent(1)
               }
             >
-              Indent
+              Augmenter le retrait
             </ContextMenuItem>
             <ContextMenuItem
               onClick={() =>
@@ -178,19 +178,19 @@ export function BlockContextMenu({ children }: { children: React.ReactNode }) {
                   .blockSelection.setIndent(-1)
               }
             >
-              Outdent
+              Diminuer le retrait
             </ContextMenuItem>
             <ContextMenuSub>
-              <ContextMenuSubTrigger>Align</ContextMenuSubTrigger>
+              <ContextMenuSubTrigger>Aligner</ContextMenuSubTrigger>
               <ContextMenuSubContent className="w-48">
                 <ContextMenuItem onClick={() => handleAlign('left')}>
-                  Left
+                  Gauche
                 </ContextMenuItem>
                 <ContextMenuItem onClick={() => handleAlign('center')}>
-                  Center
+                  Centré
                 </ContextMenuItem>
                 <ContextMenuItem onClick={() => handleAlign('right')}>
-                  Right
+                  Droite
                 </ContextMenuItem>
               </ContextMenuSubContent>
             </ContextMenuSub>

@@ -181,14 +181,14 @@ function TableFloatingToolbar({
           contentEditable={false}
         >
           <ToolbarGroup>
-            <ColorDropdownMenu tooltip="Background color">
+            <ColorDropdownMenu tooltip="Couleur de fond">
               <PaintBucketIcon />
             </ColorDropdownMenu>
             {canMerge && (
               <ToolbarButton
                 onClick={() => tf.table.merge()}
                 onMouseDown={(e) => e.preventDefault()}
-                tooltip="Merge cells"
+                tooltip="Fusionner les cellules"
               >
                 <CombineIcon />
               </ToolbarButton>
@@ -197,7 +197,7 @@ function TableFloatingToolbar({
               <ToolbarButton
                 onClick={() => tf.table.split()}
                 onMouseDown={(e) => e.preventDefault()}
-                tooltip="Split cell"
+                tooltip="Scinder la cellule"
               >
                 <SquareSplitHorizontalIcon />
               </ToolbarButton>
@@ -205,7 +205,7 @@ function TableFloatingToolbar({
 
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
-                <ToolbarButton tooltip="Cell borders">
+                <ToolbarButton tooltip="Bordures de cellule">
                   <Grid2X2Icon />
                 </ToolbarButton>
               </DropdownMenuTrigger>
@@ -217,7 +217,7 @@ function TableFloatingToolbar({
 
             {collapsedInside && (
               <ToolbarGroup>
-                <ToolbarButton tooltip="Delete table" {...buttonProps}>
+                <ToolbarButton tooltip="Supprimer le tableau" {...buttonProps}>
                   <Trash2Icon />
                 </ToolbarButton>
               </ToolbarGroup>
@@ -231,7 +231,7 @@ function TableFloatingToolbar({
                   tf.insert.tableRow({ before: true });
                 }}
                 onMouseDown={(e) => e.preventDefault()}
-                tooltip="Insert row before"
+                tooltip="Insérer une ligne avant"
               >
                 <ArrowUp />
               </ToolbarButton>
@@ -240,7 +240,7 @@ function TableFloatingToolbar({
                   tf.insert.tableRow();
                 }}
                 onMouseDown={(e) => e.preventDefault()}
-                tooltip="Insert row after"
+                tooltip="Insérer une ligne après"
               >
                 <ArrowDown />
               </ToolbarButton>
@@ -249,7 +249,7 @@ function TableFloatingToolbar({
                   tf.remove.tableRow();
                 }}
                 onMouseDown={(e) => e.preventDefault()}
-                tooltip="Delete row"
+                tooltip="Supprimer la ligne"
               >
                 <XIcon />
               </ToolbarButton>
@@ -263,7 +263,7 @@ function TableFloatingToolbar({
                   tf.insert.tableColumn({ before: true });
                 }}
                 onMouseDown={(e) => e.preventDefault()}
-                tooltip="Insert column before"
+                tooltip="Insérer une colonne avant"
               >
                 <ArrowLeft />
               </ToolbarButton>
@@ -272,7 +272,7 @@ function TableFloatingToolbar({
                   tf.insert.tableColumn();
                 }}
                 onMouseDown={(e) => e.preventDefault()}
-                tooltip="Insert column after"
+                tooltip="Insérer une colonne après"
               >
                 <ArrowRight />
               </ToolbarButton>
@@ -281,7 +281,7 @@ function TableFloatingToolbar({
                   tf.remove.tableColumn();
                 }}
                 onMouseDown={(e) => e.preventDefault()}
-                tooltip="Delete column"
+                tooltip="Supprimer la colonne"
               >
                 <XIcon />
               </ToolbarButton>

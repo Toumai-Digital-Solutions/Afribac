@@ -58,11 +58,12 @@ type Group = {
 
 const groups: Group[] = [
   {
-    group: 'AI',
+    group: 'IA',
     items: [
       {
         focusEditor: false,
         icon: <SparklesIcon />,
+        label: 'Demander à l’IA',
         value: 'AI',
         onSelect: (editor) => {
           if (editor.selection) {
@@ -78,78 +79,78 @@ const groups: Group[] = [
     ],
   },
   {
-    group: 'Basic blocks',
+    group: 'Blocs de base',
     items: [
       {
         icon: <PilcrowIcon />,
         keywords: ['paragraph'],
-        label: 'Text',
+        label: 'Texte',
         value: KEYS.p,
       },
       {
         icon: <Heading1Icon />,
         keywords: ['title', 'h1'],
-        label: 'Heading 1',
+        label: 'Titre 1',
         value: KEYS.h1,
       },
       {
         icon: <Heading2Icon />,
         keywords: ['subtitle', 'h2'],
-        label: 'Heading 2',
+        label: 'Titre 2',
         value: KEYS.h2,
       },
       {
         icon: <Heading3Icon />,
         keywords: ['subtitle', 'h3'],
-        label: 'Heading 3',
+        label: 'Titre 3',
         value: KEYS.h3,
       },
       {
         icon: <ListIcon />,
         keywords: ['unordered', 'ul', '-'],
-        label: 'Bulleted list',
+        label: 'Liste à puces',
         value: KEYS.ul,
       },
       {
         icon: <ListOrdered />,
         keywords: ['ordered', 'ol', '1'],
-        label: 'Numbered list',
+        label: 'Liste numérotée',
         value: KEYS.ol,
       },
       {
         icon: <Square />,
         keywords: ['checklist', 'task', 'checkbox', '[]'],
-        label: 'To-do list',
+        label: 'Liste de tâches',
         value: KEYS.listTodo,
       },
       {
         icon: <ChevronRightIcon />,
         keywords: ['collapsible', 'expandable'],
-        label: 'Toggle',
+        label: 'Bloc repliable',
         value: KEYS.toggle,
       },
       {
         icon: <Code2 />,
         keywords: ['```'],
-        label: 'Code Block',
+        label: 'Bloc de code',
         value: KEYS.codeBlock,
       },
       {
         icon: <Table />,
-        label: 'Table',
+        label: 'Tableau',
         value: KEYS.table,
       },
       {
         icon: <Quote />,
         keywords: ['citation', 'blockquote', 'quote', '>'],
-        label: 'Blockquote',
+        label: 'Citation',
         value: KEYS.blockquote,
       },
       {
-        description: 'Insert a highlighted block.',
+        description: 'Insérer un bloc de mise en évidence.',
         icon: <LightbulbIcon />,
         keywords: ['note'],
-        label: 'Callout',
+        label: 'Encadré',
         value: KEYS.callout,
       },
     ].map((item) => ({
@@ -160,23 +161,23 @@ const groups: Group[] = [
     })),
   },
   {
-    group: 'Advanced blocks',
+    group: 'Blocs avancés',
     items: [
       {
         icon: <TableOfContentsIcon />,
         keywords: ['toc'],
-        label: 'Table of contents',
+        label: 'Table des matières',
         value: KEYS.toc,
       },
       {
         icon: <Columns3Icon />,
-        label: '3 columns',
+        label: '3 colonnes',
         value: 'action_three_columns',
       },
       {
         focusEditor: false,
         icon: <RadicalIcon />,
-        label: 'Equation',
+        label: 'Équation',
         value: KEYS.equation,
       },
       {
@@ -193,7 +194,7 @@ const groups: Group[] = [
     })),
   },
   {
-    group: 'Inline',
+    group: 'En ligne',
     items: [
       {
         focusEditor: true,
@@ -205,7 +206,7 @@ const groups: Group[] = [
       {
         focusEditor: false,
         icon: <RadicalIcon />,
-        label: 'Inline Equation',
+        label: 'Équation en ligne',
         value: KEYS.inlineEquation,
       },
     ].map((item) => ({
@@ -228,7 +229,7 @@ export function SlashInputElement(
         <InlineComboboxInput />
 
         <InlineComboboxContent>
-          <InlineComboboxEmpty>No results</InlineComboboxEmpty>
+          <InlineComboboxEmpty>Aucun résultat</InlineComboboxEmpty>
 
           {groups.map(({ group, items }) => (
             <InlineComboboxGroup key={group}>

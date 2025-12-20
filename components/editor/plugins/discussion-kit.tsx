@@ -25,7 +25,7 @@ const discussionsData: TDiscussion[] = [
           {
             children: [
               {
-                text: 'Comments are a great way to provide feedback and discuss changes.',
+                text: 'Les commentaires sont un excellent moyen de fournir des retours et de discuter des modifications.',
               },
             ],
             type: 'p',
@@ -42,7 +42,7 @@ const discussionsData: TDiscussion[] = [
           {
             children: [
               {
-                text: 'Agreed! The link to the docs makes it easy to learn more.',
+                text: 'D\'accord! Le lien vers les docs rend facile d\'apprendre plus.',
               },
             ],
             type: 'p',
@@ -68,7 +68,7 @@ const discussionsData: TDiscussion[] = [
           {
             children: [
               {
-                text: 'Nice demonstration of overlapping annotations with both comments and suggestions!',
+                text: 'Bonne démonstration des annotations superposées avec les commentaires et les suggestions!',
               },
             ],
             type: 'p',
@@ -85,7 +85,7 @@ const discussionsData: TDiscussion[] = [
           {
             children: [
               {
-                text: 'This helps users understand how powerful the editor can be.',
+                text: 'Cela aide les utilisateurs à comprendre à quel point l\'éditeur peut être puissant.',
               },
             ],
             type: 'p',

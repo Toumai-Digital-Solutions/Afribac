@@ -71,7 +71,7 @@ const TYPE_TEXT_MAP: Record<string, (node?: TElement) => string> = {
   },
   [KEYS.table]: () => 'Table',
   [KEYS.toc]: () => 'Table of Contents',
-  [KEYS.toggle]: () => 'Toggle',
+  [KEYS.toggle]: () => 'Bloc repliable',
   [KEYS.video]: () => 'Video',
 };
 
@@ -139,7 +139,9 @@ export function BlockSuggestionCard({
             {suggestion.type === 'remove' &&
               suggestionText2Array(suggestion.text!).map((text, index) => (
                 <div key={index} className="flex items-center gap-2">
-                  <span className="text-muted-foreground text-sm">Delete:</span>
+                  <span className="text-muted-foreground text-sm">
+                    Supprimer :
+                  </span>
 
                   <span key={index} className="text-sm">
                     {text}
@@ -150,10 +152,10 @@ export function BlockSuggestionCard({
             {suggestion.type === 'insert' &&
               suggestionText2Array(suggestion.newText!).map((text, index) => (
                 <div key={index} className="flex items-center gap-2">
-                  <span className="text-muted-foreground text-sm">Add:</span>
+                  <span className="text-muted-foreground text-sm">Ajouter :</span>
 
                   <span key={index} className="text-sm">
-                    {text || 'line breaks'}
+                    {text || 'retours à la ligne'}
                   </span>
                 </div>
               ))}
@@ -167,8 +169,10 @@ export function BlockSuggestionCard({
                         key={index}
                         className="flex items-start gap-2 text-brand/80"
                       >
-                        <span className="text-sm">with:</span>
-                        <span className="text-sm">{text || 'line breaks'}</span>
+                        <span className="text-sm">avec :</span>
+                        <span className="text-sm">
+                          {text || 'retours à la ligne'}
+                        </span>
                       </div>
                     </React.Fragment>
                   )
@@ -178,9 +182,11 @@ export function BlockSuggestionCard({
                   <React.Fragment key={index}>
                     <div key={index} className="flex items-start gap-2">
                       <span className="text-muted-foreground text-sm">
-                        {index === 0 ? 'Replace:' : 'Delete:'}
+                        {index === 0 ? 'Remplacer :' : 'Supprimer :'}
                       </span>
-                      <span className="text-sm">{text || 'line breaks'}</span>
+                      <span className="text-sm">
+                        {text || 'retours à la ligne'}
+                      </span>
                     </div>
                   </React.Fragment>
                 ))}

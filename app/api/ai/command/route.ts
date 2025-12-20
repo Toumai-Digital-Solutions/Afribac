@@ -133,7 +133,10 @@ export async function POST(req: NextRequest) {
   if (!hasGeminiKey && !hasOpenAIKey) {
     console.error('[AI Command] No API keys found!');
     return NextResponse.json(
-      { error: 'Missing AI API key. Set GOOGLE_GENERATIVE_AI_API_KEY or OPENAI_API_KEY.' },
+      {
+        error:
+          'Clé API IA manquante. Définissez GOOGLE_GENERATIVE_AI_API_KEY ou OPENAI_API_KEY.',
+      },
       { status: 401 }
     );
   }
@@ -268,7 +271,10 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('[AI Command] Error:', error);
     return NextResponse.json(
-      { error: 'Failed to process AI request', details: String(error) },
+      {
+        error: 'Échec du traitement de la requête IA',
+        details: String(error),
+      },
       { status: 500 }
     );
   }
@@ -287,7 +293,7 @@ const getCommentTool = (
   }
 ) =>
   tool({
-    description: 'Comment on the content',
+    description: 'Commenter le contenu',
     inputSchema: z.object({}),
     execute: async () => {
       const { elementStream } = streamObject({

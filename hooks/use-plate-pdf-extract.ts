@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import type { Value } from 'platejs';
 import type { PlateEditor } from 'platejs/react';
-import { htmlToPlateValue, textToPlateValue } from '@/lib/plate-html-deserializer';
+import { htmlToPlateValue } from '@/lib/plate-html-deserializer';
 
 interface UsePlatePdfExtractProps {
   editor: PlateEditor;
@@ -13,25 +13,6 @@ interface UsePlatePdfExtractProps {
 export function usePlatePdfExtract({ editor, onExtracted }: UsePlatePdfExtractProps) {
   const [isExtracting, setIsExtracting] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
-
-  const extractTextFromPdfPage = useCallback(async (page: any): Promise<string> => {
-    const textContent = await page.getTextContent();
-    const items = (textContent.items || []) as Array<{ str: string; transform?: number[] }>;
-    const lines: Array<{ y: number; parts: string[] }> = [];
-    const tolerance = 2.5;
-
-    for (const item of items) {
-      const str = (item.str || '').trim();
-      if (!str) continue;
-      const y = item.transform?.[5] ?? 0;
-      const existing = lines.find((l) => Math.abs(l.y - y) <= tolerance);
-      if (existing) existing.parts.push(str);
-      else lines.push({ y, parts: [str] });
-    }
-
-    lines.sort((a, b) => b.y - a.y);
-    return lines.map((l) => l.parts.join(' ')).join('\n').trim();
-  }, []);
 
   const extractPdf = useCallback(
     async (file: File) => {
@@ -56,51 +37,45 @@ export function usePlatePdfExtract({ editor, onExtracted }: UsePlatePdfExtractPr
           setProgress({ current: i, total: pdf.numPages });
 
           const page = await pdf.getPage(i);
-          const extractedText = await extractTextFromPdfPage(page);
-          const hasText = extractedText.length >= 40;
+          console.log(`[PDF Extract] Page ${i}/${pdf.numPages} : extraction via IA…`);
+
+          // Toujours utiliser l’extraction IA/OCR (le texte natif des PDFs est souvent incomplet).
+          const viewport = page.getViewport({ scale: 2 });
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          if (!context) continue;
+
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+
+          await page.render({ canvasContext: context, viewport, canvas } as any).promise;
+          const base64Image = canvas.toDataURL('image/png').split(',')[1];
+
+          const response = await fetch('/api/extract-pdf', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ images: [base64Image] }),
+          });
+
+          if (!response.ok) throw new Error('Échec de l’extraction IA');
+
+          const reader = response.body?.getReader();
+          const decoder = new TextDecoder();
+          let htmlContent = '';
+
+          if (reader) {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              htmlContent += decoder.decode(value, { stream: true });
+            }
+          }
 
           let pageValue: Value = [];
-
-          if (hasText) {
-            // Text-based PDF - convert text to Plate value
-            pageValue = textToPlateValue(extractedText);
+          if (htmlContent.trim()) {
+            pageValue = htmlToPlateValue(htmlContent.trim());
           } else {
-            // Scanned PDF - use AI OCR extraction
-            const viewport = page.getViewport({ scale: 2 });
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            if (!context) continue;
-
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
-
-            await page.render({ canvasContext: context, viewport, canvas } as any).promise;
-            const base64Image = canvas.toDataURL('image/png').split(',')[1];
-
-            const response = await fetch('/api/extract-pdf', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ images: [base64Image] }),
-            });
-
-            if (!response.ok) throw new Error('Extraction failed');
-
-            const reader = response.body?.getReader();
-            const decoder = new TextDecoder();
-            let htmlContent = '';
-
-            if (reader) {
-              while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                htmlContent += decoder.decode(value, { stream: true });
-              }
-            }
-
-            // Convert HTML to Plate Value
-            if (htmlContent.trim()) {
-              pageValue = htmlToPlateValue(htmlContent.trim());
-            }
+            console.warn(`[PDF Extract] Page ${i} : réponse IA vide`);
           }
 
           if (pageValue.length > 0) {
@@ -138,14 +113,14 @@ export function usePlatePdfExtract({ editor, onExtracted }: UsePlatePdfExtractPr
           onExtracted?.(editor.children as Value);
         }
       } catch (error) {
-        console.error('PDF extraction error:', error);
+        console.error('Erreur extraction PDF :', error);
         throw error;
       } finally {
         setIsExtracting(false);
         setProgress({ current: 0, total: 0 });
       }
     },
-    [editor, extractTextFromPdfPage, onExtracted]
+    [editor, onExtracted]
   );
 
   const handleFileChange = useCallback(
