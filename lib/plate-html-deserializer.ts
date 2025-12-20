@@ -196,6 +196,7 @@ function convertNode(node: Node): any | any[] | null {
     case 'div':
     case 'section':
     case 'article':
+    case 'figure':
       // These are containers, process their children
       const divChildren: any[] = [];
       for (const child of Array.from(element.childNodes)) {
@@ -209,6 +210,12 @@ function convertNode(node: Node): any | any[] | null {
         }
       }
       return divChildren.length > 0 ? divChildren : null;
+
+    case 'figcaption':
+      return {
+        type: 'p',
+        children: convertChildren(element),
+      };
 
     case 'span':
       return convertChildren(element);

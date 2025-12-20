@@ -25,6 +25,7 @@ import { ExportToolbarButton } from './export-toolbar-button';
 import { FontColorToolbarButton } from './font-color-toolbar-button';
 import { FontSizeToolbarButton } from './font-size-toolbar-button';
 import { RedoToolbarButton, UndoToolbarButton } from './history-toolbar-button';
+import { ImageExtractToolbarButton } from './image-extract-toolbar-button';
 import { ImportToolbarButton } from './import-toolbar-button';
 import {
   IndentToolbarButton,
@@ -75,6 +76,10 @@ export function FixedToolbarButtons({ extraLeftGroups }: FixedToolbarButtonsProp
             </ExportToolbarButton>
 
             <ImportToolbarButton />
+          </ToolbarGroup>
+
+          <ToolbarGroup>
+            <ImageExtractToolbarButton />
           </ToolbarGroup>
 
           <ToolbarGroup>

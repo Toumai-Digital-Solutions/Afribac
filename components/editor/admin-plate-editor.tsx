@@ -16,6 +16,7 @@ import { FixedToolbarButtons } from '@/components/ui/fixed-toolbar-buttons';
 import { FloatingToolbar } from '@/components/ui/floating-toolbar';
 import { FloatingToolbarButtons } from '@/components/ui/floating-toolbar-buttons';
 import { GalleryToolbarButton } from '@/components/ui/gallery-toolbar-button';
+import { ImageExtractToolbarButton } from '@/components/ui/image-extract-toolbar-button';
 import { PdfExtractToolbarButton } from '@/components/ui/pdf-extract-toolbar-button';
 import { ToolbarGroup } from '@/components/ui/toolbar';
 import { cn } from '@/lib/utils';
@@ -149,6 +150,7 @@ export function AdminPlateEditor({
                       <GalleryToolbarButton userId={galleryUserId} />
                     )}
                     <PdfExtractToolbarButton onExtracted={onChange} />
+                    <ImageExtractToolbarButton onExtracted={onChange} />
                   </ToolbarGroup>
                 }
               />
