@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ProfileForm } from '@/components/forms/profile-form'
+import { ProfileCompletionCard } from '@/components/profile/profile-completion-card'
+import { MentorInviteCard } from '@/components/profile/mentor-invite-card'
 
 export default async function ProfilePage() {
   const supabase = await createClient()
@@ -45,10 +47,20 @@ export default async function ProfilePage() {
     .order('name')
 
   return (
-    <ProfileForm 
-      profile={profile} 
-      countries={countries || []} 
-      series={series || []} 
-    />
+    <div className="space-y-6">
+      <ProfileForm
+        profile={profile}
+        countries={countries || []}
+        series={series || []}
+      />
+
+      {/* Profile completion checklist for students */}
+      {profile.role === 'user' && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <ProfileCompletionCard profile={profile} />
+          <MentorInviteCard />
+        </div>
+      )}
+    </div>
   )
 }

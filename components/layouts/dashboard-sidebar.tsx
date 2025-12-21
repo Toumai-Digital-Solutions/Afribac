@@ -147,8 +147,8 @@ export const navigationItems: NavItem[] = [
     roles: ['user']
   },
   {
-    title: 'Mes progrès',
-    href: '/student/progress',
+    title: 'Mes statistiques',
+    href: '/student/mastery',
     icon: BarChart3,
     roles: ['user']
   }

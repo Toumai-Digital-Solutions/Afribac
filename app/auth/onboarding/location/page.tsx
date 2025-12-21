@@ -34,8 +34,17 @@ export default async function OnboardingLocationPage() {
     initialSeries = s || []
   }
 
+  // For members/admins, only 2 steps (no goals step)
+  const totalSteps = profile.role === 'user' ? 3 : 2
+
   return (
-    <AuthShell title="Votre pays et série" subtitle="Pour personnaliser vos contenus.">
+    <AuthShell
+      title="Votre pays et série"
+      subtitle="Pour personnaliser vos contenus."
+      currentStep={2}
+      totalSteps={totalSteps}
+      backHref="/auth/onboarding/name"
+    >
       <OnboardingForm
         role={profile.role}
         userId={user.id}

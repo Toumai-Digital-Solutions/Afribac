@@ -27,6 +27,7 @@ import {
   Target,
   TrendingUp
 } from 'lucide-react'
+import { ProfileCompletionCard } from '@/components/profile/profile-completion-card'
 
 interface StudentDashboardProps {
   profile: ProfileWithDetails
@@ -507,6 +508,9 @@ export function StudentDashboard({ profile }: StudentDashboardProps) {
           <p className="mt-1 text-xs text-muted-foreground">Progression moyenne : {Math.max(data.stats.averageProgress, 0)}%</p>
         </div>
       </section>
+
+      {/* Profile Completion Card - only show if profile is incomplete */}
+      <ProfileCompletionCard profile={profile} compact />
 
       {/* Continue learning & Simulation */}
       <section className="grid gap-6 xl:grid-cols-3">

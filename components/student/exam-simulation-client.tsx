@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
+import { formatDistanceToNow } from 'date-fns'
+import { fr } from 'date-fns/locale'
 import { createClient } from '@/lib/supabase/client'
 import { PDFViewer } from '@/components/educational/pdf-viewer'
 import { Button } from '@/components/ui/button'
@@ -41,6 +43,7 @@ export function ExamSimulationClient({ exam }: { exam: ExamForSimulation }) {
   const [answerText, setAnswerText] = useState('')
   const [saving, setSaving] = useState(false)
   const [loadingAttempt, setLoadingAttempt] = useState(true)
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
 
   const startTsRef = useRef<number>(Date.now())
   const autosaveRef = useRef<number | null>(null)
@@ -56,7 +59,7 @@ export function ExamSimulationClient({ exam }: { exam: ExamForSimulation }) {
     // Resume the latest non-completed attempt if present
     const { data: existing } = await supabase
       .from('exam_attempts')
-      .select('id, started_at, submitted_at, time_spent_minutes, is_completed, answers')
+      .select('id, started_at, submitted_at, time_spent_minutes, is_completed, answers, updated_at')
       .eq('user_id', userId)
       .eq('exam_id', exam.id)
       .eq('is_completed', false)
@@ -70,6 +73,9 @@ export function ExamSimulationClient({ exam }: { exam: ExamForSimulation }) {
       setAnswerText(typeof existingAnswers?.responseText === 'string' ? existingAnswers.responseText : '')
       const spentSeconds = Math.max(0, Math.round((existing.time_spent_minutes ?? 0) * 60))
       setTimeLeft(Math.max(0, exam.durationMinutes * 60 - spentSeconds))
+      if (existing.updated_at) {
+        setLastSavedAt(new Date(existing.updated_at))
+      }
       return
     }
 
@@ -133,6 +139,7 @@ export function ExamSimulationClient({ exam }: { exam: ExamForSimulation }) {
         .eq('id', attemptId)
 
       if (error) throw error
+      setLastSavedAt(new Date())
     } finally {
       setSaving(false)
     }
@@ -283,6 +290,9 @@ export function ExamSimulationClient({ exam }: { exam: ExamForSimulation }) {
   }
 
   const usedSeconds = Math.max(0, exam.durationMinutes * 60 - timeLeft)
+  const lastSavedLabel = lastSavedAt
+    ? `Dernière sauvegarde ${formatDistanceToNow(lastSavedAt, { addSuffix: true, locale: fr })}`
+    : 'Pas encore sauvegardé'
 
   return (
     <div className="space-y-6">
@@ -301,6 +311,9 @@ export function ExamSimulationClient({ exam }: { exam: ExamForSimulation }) {
               }`}>
                 <Clock className="h-4 w-4" />
                 <span className="font-mono">{formatTime(timeLeft)}</span>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {saving ? 'Sauvegarde…' : lastSavedLabel}
               </div>
               <Button variant="outline" onClick={manualSave} disabled={saving}>
                 <Save className="mr-2 h-4 w-4" />
@@ -354,7 +367,7 @@ export function ExamSimulationClient({ exam }: { exam: ExamForSimulation }) {
                 className="min-h-[55vh]"
               />
               <div className="text-xs text-muted-foreground">
-                {saving ? 'Sauvegarde…' : 'À jour'}
+                {saving ? 'Sauvegarde…' : lastSavedLabel}
               </div>
             </CardContent>
           </Card>
@@ -363,5 +376,4 @@ export function ExamSimulationClient({ exam }: { exam: ExamForSimulation }) {
     </div>
   )
 }
-
 

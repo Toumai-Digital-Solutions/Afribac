@@ -105,7 +105,8 @@ export function OnboardingForm({
 
       if (error) throw error
 
-      window.location.href = '/dashboard'
+      // Students go to goals step, others go to dashboard
+      window.location.href = role === 'user' ? '/auth/onboarding/goals' : '/dashboard'
     } catch (e: any) {
       setError(e?.message || 'Échec de la sauvegarde')
     } finally {

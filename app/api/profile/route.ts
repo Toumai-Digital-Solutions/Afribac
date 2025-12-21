@@ -21,7 +21,7 @@ export async function PATCH(request: NextRequest) {
     const profileIdToUpdate = targetUserId || user.id
 
     // Validate and sanitize the updates
-    const allowedFields = ['full_name', 'phone', 'date_of_birth', 'country_id', 'series_id', 'avatar_url']
+    const allowedFields = ['full_name', 'phone', 'date_of_birth', 'country_id', 'series_id', 'avatar_url', 'study_goal', 'weekly_availability_hours']
     const sanitizedUpdates = Object.keys(updates)
       .filter(key => allowedFields.includes(key))
       .reduce((obj: any, key) => {

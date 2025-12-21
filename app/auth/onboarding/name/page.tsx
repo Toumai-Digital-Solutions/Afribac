@@ -17,8 +17,16 @@ export default async function OnboardingNamePage() {
   if (!profile) redirect('/auth/signin')
   if (profile.full_name) redirect('/auth/onboarding')
 
+  // For members/admins, only 2 steps (no goals step)
+  const totalSteps = profile.role === 'user' ? 3 : 2
+
   return (
-    <AuthShell title="Votre nom complet" subtitle="Dis-nous comment t’appeler.">
+    <AuthShell
+      title="Votre nom complet"
+      subtitle="Dis-nous comment t'appeler."
+      currentStep={1}
+      totalSteps={totalSteps}
+    >
       <NameForm />
     </AuthShell>
   )

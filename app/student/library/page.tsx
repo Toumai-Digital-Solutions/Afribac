@@ -1,13 +1,20 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { formatDistanceToNow } from 'date-fns'
+import { fr } from 'date-fns/locale'
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Progress } from '@/components/ui/progress'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
+  Bookmark,
   BookOpen,
+  CalendarClock,
   Compass,
+  Clock,
   FileText,
   Globe2,
   Layers,
@@ -33,6 +40,13 @@ function formatDifficulty(level: number | null): string {
     default:
       return 'Tous niveaux'
   }
+}
+
+function formatMinutes(value: number | null) {
+  if (!value) return '0 min'
+  if (value < 60) return `${Math.round(value)} min`
+  const hours = value / 60
+  return `${hours.toFixed(hours % 1 === 0 ? 0 : 1)} h`
 }
 
 export default async function StudentLibraryPage({
@@ -64,6 +78,39 @@ export default async function StudentLibraryPage({
   if (!profile) {
     redirect('/auth/onboarding')
   }
+
+  const { data: progressEntries } = await supabase
+    .from('user_progress')
+    .select(`
+      course_id,
+      completion_percentage,
+      time_spent,
+      last_accessed,
+      is_completed,
+      bookmarks,
+      course:courses(
+        id,
+        title,
+        description,
+        estimated_duration,
+        difficulty_level,
+        subject:subjects(name, color),
+        topic:topics(name)
+      )
+    `)
+    .eq('user_id', profile.id)
+    .order('last_accessed', { ascending: false })
+
+  const progressCourses = (progressEntries || []).filter((entry) => entry.course)
+  const inProgress = progressCourses.filter(
+    (entry) => !entry.is_completed && (entry.completion_percentage || 0) > 0
+  )
+  const completed = progressCourses.filter(
+    (entry) => entry.is_completed || (entry.completion_percentage || 0) >= 100
+  )
+  const saved = progressCourses.filter(
+    (entry) => Array.isArray(entry.bookmarks) && (entry.bookmarks as any[]).length > 0
+  )
 
   const query = searchParams?.q?.trim() ?? ''
 
@@ -162,6 +209,116 @@ export default async function StudentLibraryPage({
             </p>
           </div>
         </div>
+      </section>
+
+      <section className="space-y-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-2xl font-semibold">Ma bibliothèque personnelle</h2>
+            <p className="text-sm text-muted-foreground">
+              Retrouvez vos cours sauvegardés, en cours et terminés.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1 rounded-full bg-muted/40 px-3 py-1">
+              <Compass className="h-3.5 w-3.5" />
+              {inProgress.length} en cours
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-muted/40 px-3 py-1">
+              <Bookmark className="h-3.5 w-3.5" />
+              {saved.length} sauvegardés
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-muted/40 px-3 py-1">
+              <BookOpen className="h-3.5 w-3.5" />
+              {completed.length} terminés
+            </span>
+          </div>
+        </div>
+
+        <Tabs defaultValue="all" className="space-y-4">
+          <TabsList className="flex flex-wrap">
+            <TabsTrigger value="all">Tous</TabsTrigger>
+            <TabsTrigger value="in-progress">En cours</TabsTrigger>
+            <TabsTrigger value="saved">Sauvegardés</TabsTrigger>
+            <TabsTrigger value="completed">Terminés</TabsTrigger>
+          </TabsList>
+
+          {([
+            { value: 'all', items: progressCourses, empty: 'Commencez un cours pour le retrouver ici.' },
+            { value: 'in-progress', items: inProgress, empty: 'Aucun cours en cours pour le moment.' },
+            { value: 'saved', items: saved, empty: 'Ajoutez un marque-page dans un PDF pour sauvegarder un cours.' },
+            { value: 'completed', items: completed, empty: 'Terminez un cours pour le voir apparaître ici.' },
+          ] as const).map((section) => (
+            <TabsContent key={section.value} value={section.value}>
+              {section.items.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {section.items.map((entry) => (
+                    <Card key={entry.course_id} className="border-muted-foreground/10 bg-muted/10">
+                      <CardHeader className="space-y-3">
+                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                          {entry.course?.subject?.name ? (
+                            <Badge variant="secondary" className="rounded-full bg-white text-foreground">
+                              {entry.course.subject.name}
+                            </Badge>
+                          ) : null}
+                          {entry.course?.topic?.name ? (
+                            <Badge variant="outline" className="rounded-full">
+                              {entry.course.topic.name}
+                            </Badge>
+                          ) : null}
+                          <Badge variant="outline" className="rounded-full">
+                            {formatDifficulty(entry.course?.difficulty_level ?? null)}
+                          </Badge>
+                        </div>
+                        <CardTitle className="text-lg leading-tight">
+                          {entry.course?.title}
+                        </CardTitle>
+                        {entry.course?.description ? (
+                          <CardDescription className="leading-relaxed text-muted-foreground">
+                            {entry.course.description}
+                          </CardDescription>
+                        ) : null}
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span>Progression</span>
+                            <span>{Math.round(entry.completion_percentage || 0)}%</span>
+                          </div>
+                          <Progress value={entry.completion_percentage || 0} className="h-2" />
+                        </div>
+                        <div className="grid gap-1 text-xs text-muted-foreground">
+                          <span className="inline-flex items-center gap-2">
+                            <Clock className="h-3.5 w-3.5" />
+                            Temps passé: {formatMinutes(entry.time_spent ?? 0)}
+                          </span>
+                          {entry.last_accessed ? (
+                            <span className="inline-flex items-center gap-2">
+                              <CalendarClock className="h-3.5 w-3.5" />
+                              Dernier accès {formatDistanceToNow(new Date(entry.last_accessed), { addSuffix: true, locale: fr })}
+                            </span>
+                          ) : null}
+                        </div>
+                        <Link href={`/student/courses/${entry.course_id}`} className="block">
+                          <Button variant="outline" className="w-full rounded-2xl text-sm">
+                            {entry.is_completed ? 'Revoir le cours' : 'Continuer'}
+                          </Button>
+                        </Link>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card className="border-dashed">
+                  <CardContent className="flex flex-col items-center gap-3 py-12 text-sm text-muted-foreground">
+                    <BookOpen className="h-10 w-10" />
+                    {section.empty}
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+          ))}
+        </Tabs>
       </section>
 
       <section className="space-y-6">

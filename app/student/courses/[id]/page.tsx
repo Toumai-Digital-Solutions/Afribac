@@ -20,6 +20,7 @@ export default async function StudentCourseDetailPage({
       title,
       description,
       content,
+      content_json,
       pdf_url,
       pdf_filename,
       video_url,
@@ -50,6 +51,7 @@ export default async function StudentCourseDetailPage({
         title: course.title,
         description: course.description,
         content: course.content,
+        contentJson: (course as any).content_json ?? null,
         pdfUrl: course.pdf_url,
         pdfFilename: course.pdf_filename,
         videoUrl: course.video_url,
@@ -69,5 +71,4 @@ export default async function StudentCourseDetailPage({
     />
   )
 }
-
 

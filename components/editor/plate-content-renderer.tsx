@@ -9,9 +9,10 @@ import { EditorView } from '@/components/ui/editor';
 interface PlateContentRendererProps {
   value: Value;
   className?: string;
+  variant?: React.ComponentProps<typeof EditorView>['variant'];
 }
 
-export function PlateContentRenderer({ value, className }: PlateContentRendererProps) {
+export function PlateContentRenderer({ value, className, variant }: PlateContentRendererProps) {
   const editor = usePlateViewEditor({
     plugins: BaseEditorKit,
     value,
@@ -21,6 +22,7 @@ export function PlateContentRenderer({ value, className }: PlateContentRendererP
     <EditorView
       editor={editor}
       className={className}
+      variant={variant}
     />
   );
 }

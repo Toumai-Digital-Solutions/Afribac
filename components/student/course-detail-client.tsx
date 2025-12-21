@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
+import { formatDistanceToNow } from 'date-fns'
+import { fr } from 'date-fns/locale'
 import { createClient } from '@/lib/supabase/client'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -10,13 +12,15 @@ import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
 import { PDFViewer } from '@/components/educational/pdf-viewer'
-import { BookOpen, CheckCircle2, Clock, FileText, PlayCircle } from 'lucide-react'
+import { PlateContentRenderer } from '@/components/editor/plate-content-renderer'
+import { BookOpen, Bookmark, CalendarClock, CheckCircle2, Clock, FileText, PlayCircle } from 'lucide-react'
 
 type CourseDetail = {
   id: string
   title: string
   description: string | null
   content: string | null
+  contentJson?: unknown | null
   pdfUrl: string | null
   pdfFilename: string | null
   videoUrl: string | null
@@ -87,8 +91,14 @@ export function CourseDetailClient({
   const [isCompleted, setIsCompleted] = useState<boolean>(Boolean(initialProgress.isCompleted))
   const [bookmarks, setBookmarks] = useState<number[]>(initialProgress.bookmarks || [])
   const [saving, setSaving] = useState(false)
+  const [lastAccessed, setLastAccessed] = useState<string | null>(initialProgress.lastAccessed ?? null)
 
   const safeContentHtml = useMemo(() => sanitizeHtmlForRender(course.content || ''), [course.content])
+  const structuredContent = useMemo(() => {
+    if (Array.isArray(course.contentJson)) return course.contentJson
+    return null
+  }, [course.contentJson])
+  const hasStructuredContent = Boolean(structuredContent && structuredContent.length > 0)
 
   const upsertProgress = useCallback(async (partial?: Partial<{
     completion_percentage: number
@@ -105,6 +115,7 @@ export function CourseDetailClient({
     }
     if (!userIdRef.current) return
 
+    const nowIso = new Date().toISOString()
     const payload = {
       user_id: userIdRef.current,
       course_id: course.id,
@@ -112,12 +123,13 @@ export function CourseDetailClient({
       time_spent: Math.max(0, partial?.time_spent ?? timeSpentMinutes),
       is_completed: partial?.is_completed ?? isCompleted,
       bookmarks: partial?.bookmarks ?? bookmarks,
-      last_accessed: new Date().toISOString()
+      last_accessed: nowIso
     }
 
     await supabase
       .from('user_progress')
       .upsert(payload as any, { onConflict: 'user_id,course_id' })
+    setLastAccessed(nowIso)
   }, [course.id, completion, timeSpentMinutes, isCompleted, bookmarks])
 
   const flushTime = useCallback(async () => {
@@ -252,6 +264,16 @@ export function CourseDetailClient({
               {completion}% • {isCompleted ? 'Terminé' : 'En cours'}
             </span>
             <span>Temps passé : {timeSpentMinutes} min</span>
+            {lastAccessed ? (
+              <span className="inline-flex items-center gap-2">
+                <CalendarClock className="h-4 w-4" />
+                Dernier accès {formatDistanceToNow(new Date(lastAccessed), { addSuffix: true, locale: fr })}
+              </span>
+            ) : null}
+            <span className="inline-flex items-center gap-2">
+              <Bookmark className="h-4 w-4" />
+              {bookmarks.length} marque{bookmarks.length > 1 ? 's' : ''}-page{bookmarks.length > 1 ? 's' : ''}
+            </span>
           </div>
         </div>
         <div className="flex gap-2">
@@ -298,7 +320,14 @@ export function CourseDetailClient({
                   ref={contentRef}
                   className="max-h-[70vh] overflow-auto p-6"
                 >
-                  {safeContentHtml ? (
+                  {hasStructuredContent ? (
+                    <div className="prose prose-sm sm:prose lg:prose-lg max-w-none dark:prose-invert">
+                      <PlateContentRenderer
+                        value={structuredContent as any}
+                        variant="none"
+                      />
+                    </div>
+                  ) : safeContentHtml ? (
                     <div
                       className="prose prose-sm sm:prose lg:prose-lg max-w-none dark:prose-invert"
                       dangerouslySetInnerHTML={{ __html: safeContentHtml }}
@@ -368,5 +397,3 @@ export function CourseDetailClient({
     </div>
   )
 }
-
-

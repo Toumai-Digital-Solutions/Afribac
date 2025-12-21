@@ -1,18 +1,31 @@
 'use client'
 
 import { ReactNode } from 'react'
-import { BookOpen } from 'lucide-react'
+import { BookOpen, ArrowLeft } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import Lottie from "lottie-react";
 import student from "../../public/lottie/student.json";
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+
+interface AuthShellProps {
+  title: string
+  subtitle?: string
+  children: ReactNode
+  currentStep?: number
+  totalSteps?: number
+  backHref?: string
+}
+
 export function AuthShell({
   title,
   subtitle,
   children,
-}: {
-  title: string
-  subtitle?: string
-  children: ReactNode
-}) {
+  currentStep,
+  totalSteps,
+  backHref,
+}: AuthShellProps) {
+  const router = useRouter()
   return (
     <div className="min-h-screen grid md:grid-cols-2">
       {/* Left: marketing / illustration */}
@@ -45,6 +58,39 @@ export function AuthShell({
       {/* Right: auth panel */}
       <div className="flex items-center justify-center p-6 md:p-10 bg-background">
         <div className="w-full max-w-md">
+          {/* Progress indicator */}
+          {currentStep && totalSteps && (
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-muted-foreground">
+                  Étape {currentStep} sur {totalSteps}
+                </span>
+                <span className="text-sm font-medium text-primary">
+                  {Math.round((currentStep / totalSteps) * 100)}%
+                </span>
+              </div>
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all duration-300 rounded-full"
+                  style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Back button */}
+          {backHref && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mb-4 -ml-2 text-muted-foreground hover:text-foreground"
+              onClick={() => router.push(backHref)}
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Retour
+            </Button>
+          )}
+
           <div className="mb-6">
             <h1 className="text-3xl font-semibold">{title}</h1>
             {subtitle && (

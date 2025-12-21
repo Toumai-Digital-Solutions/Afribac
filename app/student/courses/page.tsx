@@ -5,8 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Clock, BookOpen } from 'lucide-react'
+import { StudentCourseFilters } from '@/components/educational/student-course-filters'
 
-function formatDifficulty(level: number) {
+function formatDifficulty(level: number | null) {
   switch (level) {
     case 1: return { label: 'Débutant', className: 'bg-green-100 text-green-800' }
     case 2: return { label: 'Facile', className: 'bg-blue-100 text-blue-800' }
@@ -17,7 +18,22 @@ function formatDifficulty(level: number) {
   }
 }
 
-export default async function StudentCoursesPage() {
+export default async function StudentCoursesPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+  const sp = await searchParams
+  const search = (sp?.search as string) || ''
+  const subjectId = (sp?.subject_id as string) || ''
+  const topicId = (sp?.topic_id as string) || ''
+  const sort = (sp?.sort as string) || 'recommended'
+  const tagIdsParam = (sp?.tag_ids as string) || ''
+  const tagIds = tagIdsParam
+    .split(',')
+    .map((id) => id.trim())
+    .filter(Boolean)
+
   const supabase = await createClient()
 
   const { data: { user }, error } = await supabase.auth.getUser()
@@ -43,18 +59,62 @@ export default async function StudentCoursesPage() {
     redirect('/auth/onboarding/location')
   }
 
-  const [{ data: courses }, { data: progress }] = await Promise.all([
-    supabase
-      .from('searchable_courses')
-      .select('*')
-      .eq('status', 'publish')
-      .contains('country_ids', [profile.country_id])
-      .contains('series_ids', [profile.series_id])
-      .order('updated_at', { ascending: false }),
+  let coursesQuery = supabase
+    .from('searchable_courses')
+    .select('*')
+    .eq('status', 'publish')
+    .contains('country_ids', [profile.country_id])
+    .contains('series_ids', [profile.series_id])
+
+  if (search) {
+    coursesQuery = coursesQuery.or(`title.ilike.%${search}%,description.ilike.%${search}%`)
+  }
+
+  if (subjectId) {
+    coursesQuery = coursesQuery.eq('subject_id', subjectId)
+  }
+
+  if (topicId) {
+    coursesQuery = coursesQuery.eq('topic_id', topicId)
+  }
+
+  if (tagIds.length > 0) {
+    coursesQuery = coursesQuery.overlaps('tag_ids', tagIds)
+  }
+
+  switch (sort) {
+    case 'newest':
+      coursesQuery = coursesQuery.order('created_at', { ascending: false })
+      break
+    case 'popular':
+      coursesQuery = coursesQuery.order('view_count', { ascending: false })
+      break
+    case 'difficulty':
+      coursesQuery = coursesQuery.order('difficulty_level', { ascending: false })
+      break
+    default:
+      coursesQuery = coursesQuery.order('updated_at', { ascending: false })
+  }
+
+  const [
+    { data: courses },
+    { data: progress },
+    { data: subjects },
+    { data: topics },
+    { data: tags },
+  ] = await Promise.all([
+    coursesQuery,
     supabase
       .from('user_progress')
       .select('course_id, completion_percentage, time_spent')
-      .eq('user_id', profile.id)
+      .eq('user_id', profile.id),
+    supabase.from('subjects').select('id, name, color').order('name'),
+    supabase
+      .from('topics')
+      .select('id, name, subject_id, subjects(name)')
+      .order('position', { ascending: true })
+      .order('name', { ascending: true }),
+    supabase.from('tags').select('id, name, color, type').order('name'),
   ])
 
   const progressByCourse = new Map<string, { completion: number; time: number }>()
@@ -77,6 +137,24 @@ export default async function StudentCoursesPage() {
           </p>
         </div>
       </div>
+
+      <StudentCourseFilters
+        search={search}
+        subjectId={subjectId}
+        topicId={topicId}
+        tagIds={tagIds}
+        sort={sort}
+        subjects={(subjects || []) as any}
+        topics={(topics || []).map((topic: any) => ({
+          id: topic.id,
+          name: topic.name,
+          subject_id: topic.subject_id,
+          subject_name: topic.subjects?.name ?? null,
+        }))}
+        tags={(tags || []) as any}
+        countryName={profile.country?.name}
+        seriesName={profile.series?.name}
+      />
 
       {availableCourses.length === 0 ? (
         <Card>
@@ -123,8 +201,23 @@ export default async function StudentCoursesPage() {
 
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Clock className="h-4 w-4" />
-                    {course.estimated_duration} minutes
+                    {course.estimated_duration ? `${course.estimated_duration} minutes` : 'Durée non définie'}
                   </div>
+
+                  {Array.isArray(course.tag_names) && course.tag_names.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {course.tag_names.slice(0, 3).map((tag: string) => (
+                        <Badge key={tag} variant="secondary" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
+                      {course.tag_names.length > 3 ? (
+                        <Badge variant="outline" className="text-xs">
+                          +{course.tag_names.length - 3}
+                        </Badge>
+                      ) : null}
+                    </div>
+                  ) : null}
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-xs text-muted-foreground">

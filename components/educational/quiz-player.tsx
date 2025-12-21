@@ -254,6 +254,8 @@ export function QuizPlayer({ quiz, onComplete }: QuizPlayerProps) {
   }
 
   const progressPercentage = (getAnsweredCount() / totalQuestions) * 100
+  const isReviewing = quizState === 'reviewing'
+  const correctCount = Object.values(correctAnswers).filter(Boolean).length
 
   if (quizState === 'completed' && showResults) {
     return (
@@ -265,18 +267,26 @@ export function QuizPlayer({ quiz, onComplete }: QuizPlayerProps) {
               <Trophy className="h-16 w-16 text-yellow-500" />
             </div>
             <CardTitle className="text-2xl">Quiz Terminé!</CardTitle>
-            <div className="flex justify-center items-center gap-6 mt-4">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-green-600">{score}</div>
-                <div className="text-sm text-muted-foreground">sur {maxScore} points</div>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-xl border bg-muted/10 p-4 text-center">
+                <div className="text-2xl font-bold text-green-600">{score}</div>
+                <div className="text-xs text-muted-foreground">sur {maxScore} points</div>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600">{Math.round((score / maxScore) * 100)}%</div>
-                <div className="text-sm text-muted-foreground">Score</div>
+              <div className="rounded-xl border bg-muted/10 p-4 text-center">
+                <div className="text-2xl font-bold text-blue-600">
+                  {maxScore > 0 ? Math.round((score / maxScore) * 100) : 0}%
+                </div>
+                <div className="text-xs text-muted-foreground">Score</div>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-purple-600">{formatTime(timeSpent)}</div>
-                <div className="text-sm text-muted-foreground">Temps</div>
+              <div className="rounded-xl border bg-muted/10 p-4 text-center">
+                <div className="text-2xl font-bold text-emerald-600">
+                  {correctCount}/{totalQuestions}
+                </div>
+                <div className="text-xs text-muted-foreground">Bonnes réponses</div>
+              </div>
+              <div className="rounded-xl border bg-muted/10 p-4 text-center">
+                <div className="text-2xl font-bold text-purple-600">{formatTime(timeSpent)}</div>
+                <div className="text-xs text-muted-foreground">Temps</div>
               </div>
             </div>
           </CardHeader>
@@ -357,14 +367,34 @@ export function QuizPlayer({ quiz, onComplete }: QuizPlayerProps) {
               <RadioGroup
                 value={userAnswers[currentQuestion.id]?.selectedOptions[0] || ''}
                 onValueChange={(value) => handleSingleChoice(currentQuestion.id, value)}
+                disabled={isReviewing}
               >
                 {currentQuestion.answer_options?.map((option) => (
-                  <div key={option.id} className="flex items-center space-x-2">
-                    <RadioGroupItem value={option.id} id={option.id} />
-                    <Label htmlFor={option.id} className="flex-1 cursor-pointer">
-                      {option.option_text}
-                    </Label>
-                  </div>
+                  (() => {
+                    const isSelected = userAnswers[currentQuestion.id]?.selectedOptions.includes(option.id) || false
+                    const isCorrect = option.is_correct
+                    const highlightClass = isReviewing
+                      ? isCorrect
+                        ? 'border-green-200 bg-green-50'
+                        : isSelected
+                          ? 'border-red-200 bg-red-50'
+                          : 'border-muted/30'
+                      : 'border-muted/30'
+                    return (
+                      <div key={option.id} className={`flex items-center space-x-2 rounded-md border px-3 py-2 ${highlightClass}`}>
+                        <RadioGroupItem value={option.id} id={option.id} disabled={isReviewing} />
+                        <Label htmlFor={option.id} className="flex-1 cursor-pointer">
+                          {option.option_text}
+                        </Label>
+                        {isReviewing && isCorrect ? (
+                          <Badge className="bg-green-100 text-green-700">Bonne réponse</Badge>
+                        ) : null}
+                        {isReviewing && !isCorrect && isSelected ? (
+                          <Badge variant="destructive">Votre réponse</Badge>
+                        ) : null}
+                      </div>
+                    )
+                  })()
                 ))}
               </RadioGroup>
             )}
@@ -372,18 +402,38 @@ export function QuizPlayer({ quiz, onComplete }: QuizPlayerProps) {
             {currentQuestion.question_type === 'multiple_choice' && (
               <div className="space-y-2">
                 {currentQuestion.answer_options?.map((option) => (
-                  <div key={option.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={option.id}
-                      checked={userAnswers[currentQuestion.id]?.selectedOptions.includes(option.id) || false}
-                      onCheckedChange={(checked) => 
-                        handleMultipleChoice(currentQuestion.id, option.id, !!checked)
-                      }
-                    />
-                    <Label htmlFor={option.id} className="flex-1 cursor-pointer">
-                      {option.option_text}
-                    </Label>
-                  </div>
+                  (() => {
+                    const isSelected = userAnswers[currentQuestion.id]?.selectedOptions.includes(option.id) || false
+                    const isCorrect = option.is_correct
+                    const highlightClass = isReviewing
+                      ? isCorrect
+                        ? 'border-green-200 bg-green-50'
+                        : isSelected
+                          ? 'border-red-200 bg-red-50'
+                          : 'border-muted/30'
+                      : 'border-muted/30'
+                    return (
+                      <div key={option.id} className={`flex items-center space-x-2 rounded-md border px-3 py-2 ${highlightClass}`}>
+                        <Checkbox
+                          id={option.id}
+                          checked={isSelected}
+                          onCheckedChange={(checked) =>
+                            handleMultipleChoice(currentQuestion.id, option.id, !!checked)
+                          }
+                          disabled={isReviewing}
+                        />
+                        <Label htmlFor={option.id} className="flex-1 cursor-pointer">
+                          {option.option_text}
+                        </Label>
+                        {isReviewing && isCorrect ? (
+                          <Badge className="bg-green-100 text-green-700">Bonne réponse</Badge>
+                        ) : null}
+                        {isReviewing && !isCorrect && isSelected ? (
+                          <Badge variant="destructive">Votre réponse</Badge>
+                        ) : null}
+                      </div>
+                    )
+                  })()
                 ))}
               </div>
             )}
@@ -392,14 +442,34 @@ export function QuizPlayer({ quiz, onComplete }: QuizPlayerProps) {
               <RadioGroup
                 value={userAnswers[currentQuestion.id]?.selectedOptions[0] || ''}
                 onValueChange={(value) => handleSingleChoice(currentQuestion.id, value)}
+                disabled={isReviewing}
               >
                 {currentQuestion.answer_options?.map((option) => (
-                  <div key={option.id} className="flex items-center space-x-2">
-                    <RadioGroupItem value={option.id} id={option.id} />
-                    <Label htmlFor={option.id} className="flex-1 cursor-pointer">
-                      {option.option_text}
-                    </Label>
-                  </div>
+                  (() => {
+                    const isSelected = userAnswers[currentQuestion.id]?.selectedOptions.includes(option.id) || false
+                    const isCorrect = option.is_correct
+                    const highlightClass = isReviewing
+                      ? isCorrect
+                        ? 'border-green-200 bg-green-50'
+                        : isSelected
+                          ? 'border-red-200 bg-red-50'
+                          : 'border-muted/30'
+                      : 'border-muted/30'
+                    return (
+                      <div key={option.id} className={`flex items-center space-x-2 rounded-md border px-3 py-2 ${highlightClass}`}>
+                        <RadioGroupItem value={option.id} id={option.id} disabled={isReviewing} />
+                        <Label htmlFor={option.id} className="flex-1 cursor-pointer">
+                          {option.option_text}
+                        </Label>
+                        {isReviewing && isCorrect ? (
+                          <Badge className="bg-green-100 text-green-700">Bonne réponse</Badge>
+                        ) : null}
+                        {isReviewing && !isCorrect && isSelected ? (
+                          <Badge variant="destructive">Votre réponse</Badge>
+                        ) : null}
+                      </div>
+                    )
+                  })()
                 ))}
               </RadioGroup>
             )}
@@ -413,13 +483,14 @@ export function QuizPlayer({ quiz, onComplete }: QuizPlayerProps) {
                   onChange={(e) => handleShortAnswer(currentQuestion.id, e.target.value)}
                   placeholder="Tapez votre réponse ici..."
                   rows={4}
+                  readOnly={isReviewing}
                 />
               </div>
             )}
           </div>
 
           {/* Show answer status */}
-          {quizState === 'reviewing' && (
+          {isReviewing && (
             <Alert className={correctAnswers[currentQuestion.id] ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}>
               <div className="flex items-center gap-2">
                 {correctAnswers[currentQuestion.id] ? (
