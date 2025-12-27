@@ -101,7 +101,7 @@ export default async function StudentQuizPage() {
         <div>
           <h1 className="text-3xl font-bold">Quiz & Exercices</h1>
           <p className="text-muted-foreground">
-            Contenus disponibles pour {typedprofile.series?.[0].name} • {typedProfile.country?.name}
+            Contenus disponibles pour {typedProfile?.series?.[0].name} • {typedProfile.country?.name}
           </p>
         </div>
       </div>
