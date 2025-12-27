@@ -14,7 +14,7 @@ export const USER_STATUSES = {
 
 export const COURSE_STATUSES = {
   DRAFT: 'draft' as const,
-  PUBLISH: 'publish' as const,
+  PUBLISHED: 'published' as const,
   ARCHIVED: 'archived' as const
 }
 
@@ -41,7 +41,7 @@ export const COURSE_STATUS_CONFIG = {
     color: '#64748B',
     icon: 'file-edit'
   },
-  [COURSE_STATUSES.PUBLISH]: {
+  [COURSE_STATUSES.PUBLISHED]: {
     label: 'Publié',
     color: '#10B981',
     icon: 'eye'
@@ -69,5 +69,55 @@ export const USER_STATUS_CONFIG = {
     label: 'Supprimé',
     color: '#EF4444',
     icon: 'x-circle'
+  }
+} as const
+
+// AI constants
+export const AI_PROVIDERS = {
+  OPENAI: 'openai' as const,
+  GEMINI: 'gemini' as const
+}
+
+export const AI_SERVICES = {
+  COPILOT: 'copilot' as const,
+  EXTRACTION: 'extraction' as const
+}
+
+export const AI_LOG_STATUSES = {
+  SUCCESS: 'success' as const,
+  ERROR: 'error' as const,
+  TIMEOUT: 'timeout' as const
+}
+
+// AI provider configuration
+export const AI_PROVIDER_CONFIG = {
+  [AI_PROVIDERS.OPENAI]: {
+    label: 'OpenAI',
+    defaultModels: ['gpt-4o-mini', 'gpt-4o', 'gpt-3.5-turbo'],
+    color: '#10A37F'
+  },
+  [AI_PROVIDERS.GEMINI]: {
+    label: 'Google Gemini',
+    defaultModels: ['gemini-2.0-flash', 'gemini-2-0-flash-exp', 'gemini-1.5-pro', 'gemini-1.5-flash'],
+    color: '#4285F4'
+  }
+} as const
+
+// AI log status display config
+export const AI_LOG_STATUS_CONFIG = {
+  [AI_LOG_STATUSES.SUCCESS]: {
+    label: 'Succès',
+    color: '#10B981',
+    icon: 'check-circle'
+  },
+  [AI_LOG_STATUSES.ERROR]: {
+    label: 'Erreur',
+    color: '#EF4444',
+    icon: 'x-circle'
+  },
+  [AI_LOG_STATUSES.TIMEOUT]: {
+    label: 'Timeout',
+    color: '#F59E0B',
+    icon: 'clock'
   }
 } as const

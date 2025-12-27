@@ -17,7 +17,7 @@ interface Course {
   topic_slug?: string | null
   difficulty_level: number
   estimated_duration: number
-  status: 'draft' | 'publish' | 'archived'
+  status: 'draft' | 'published' | 'archived'
   view_count: number
   author_name: string | null
   series_names: string[]

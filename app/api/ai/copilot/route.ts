@@ -4,6 +4,8 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
 import { generateText } from 'ai';
 import { NextResponse } from 'next/server';
+import { getAIConfigWithFallback } from '@/lib/ai/config';
+import { logAIUsage, calculateTotalTokens } from '@/lib/ai/logging';
 
 type Provider = 'openai' | 'gemini';
 
@@ -60,6 +62,8 @@ const normalizeProviderAndModel = ({
 
 export async function POST(req: NextRequest) {
   console.log('[AI Copilot] Request received');
+  const startTime = Date.now();
+
   const {
     model,
     prompt,
@@ -69,6 +73,10 @@ export async function POST(req: NextRequest) {
 
   console.log('[AI Copilot] Provider:', provider, 'Model:', model);
   console.log('[AI Copilot] Prompt length:', prompt?.length ?? 0);
+
+  // Fetch AI configuration from database
+  const config = await getAIConfigWithFallback('copilot');
+  console.log('[AI Copilot] Using config:', config);
 
   // Check for at least one API key
   const hasGeminiKey = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY;
@@ -93,14 +101,15 @@ export async function POST(req: NextRequest) {
 
   const { provider: effectiveProvider, model: effectiveModel } =
     normalizeProviderAndModel({
-      model,
-      provider,
+      model: model || config.modelName,
+      provider: provider || config.provider,
       hasGeminiKey,
       hasOpenAIKey,
     });
 
   const resolvedModel =
     effectiveModel ||
+    config.modelName ||
     (effectiveProvider === 'gemini'
       ? DEFAULT_GEMINI_MODEL
       : DEFAULT_OPENAI_MODEL);
@@ -127,18 +136,57 @@ export async function POST(req: NextRequest) {
   try {
     const result = await generateText({
       abortSignal: req.signal,
-      maxOutputTokens: 50,
+      maxOutputTokens: config.maxOutputTokens,
       model: aiModel,
       prompt,
       system,
-      temperature: 0.7,
+      temperature: config.temperature,
+    });
+
+    const processingTime = Date.now() - startTime;
+
+    // Log successful usage
+    await logAIUsage({
+      serviceType: 'copilot',
+      provider: effectiveProvider,
+      modelName: resolvedModel,
+      promptSummary: prompt,
+      status: 'success',
+      inputTokens: result.usage?.inputTokens,
+      outputTokens: result.usage?.outputTokens,
+      totalTokens: calculateTotalTokens(result.usage?.inputTokens, result.usage?.outputTokens) ?? undefined,
+      processingTimeMs: processingTime,
+      metadata: { hasSystem: !!system }
     });
 
     return NextResponse.json(result);
   } catch (error) {
+    const processingTime = Date.now() - startTime;
+
     if (error instanceof Error && error.name === 'AbortError') {
+      // Log timeout
+      await logAIUsage({
+        serviceType: 'copilot',
+        provider: effectiveProvider,
+        modelName: resolvedModel,
+        promptSummary: prompt,
+        status: 'timeout',
+        processingTimeMs: processingTime
+      });
+
       return NextResponse.json(null, { status: 408 });
     }
+
+    // Log error
+    await logAIUsage({
+      serviceType: 'copilot',
+      provider: effectiveProvider,
+      modelName: resolvedModel,
+      promptSummary: prompt,
+      status: 'error',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      processingTimeMs: processingTime
+    });
 
     return NextResponse.json(
       { error: 'Échec du traitement de la requête IA' },

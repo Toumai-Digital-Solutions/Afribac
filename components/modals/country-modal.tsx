@@ -7,6 +7,7 @@ import { useLoading } from '@/components/providers/loading-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Globe, Save, AlertTriangle, Plus } from 'lucide-react'
@@ -17,6 +18,9 @@ interface CountryModalProps {
     id: string
     name: string
     code: string
+    flag_url?: string
+    is_supported?: boolean
+    display_order?: number
   }
   mode?: 'create' | 'edit'
   trigger?: React.ReactNode
@@ -30,6 +34,9 @@ export function CountryModal({ initialData, mode = 'create', trigger, onSuccess 
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     code: initialData?.code || '',
+    flag_url: initialData?.flag_url || '',
+    is_supported: initialData?.is_supported ?? false,
+    display_order: initialData?.display_order || 0,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -45,6 +52,14 @@ export function CountryModal({ initialData, mode = 'create', trigger, onSuccess 
       newErrors.code = 'Le code du pays est requis'
     } else if (formData.code.length !== 2) {
       newErrors.code = 'Le code doit contenir exactement 2 caractères'
+    }
+
+    if (!formData.flag_url.trim()) {
+      newErrors.flag_url = 'Le drapeau est requis'
+    }
+
+    if (formData.display_order < 0) {
+      newErrors.display_order = "L'ordre d'affichage doit être positif"
     }
 
     setErrors(newErrors)
@@ -65,6 +80,9 @@ export function CountryModal({ initialData, mode = 'create', trigger, onSuccess 
       const countryData = {
         name: formData.name.trim(),
         code: formData.code.toUpperCase().trim(),
+        flag_url: formData.flag_url.trim(),
+        is_supported: formData.is_supported,
+        display_order: formData.display_order,
       }
 
       let result
@@ -99,7 +117,13 @@ export function CountryModal({ initialData, mode = 'create', trigger, onSuccess 
       
       // Reset form for create mode
       if (mode === 'create') {
-        setFormData({ name: '', code: '' })
+        setFormData({
+          name: '',
+          code: '',
+          flag_url: '',
+          is_supported: false,
+          display_order: 0
+        })
       }
     } catch (error) {
       console.error('Error saving country:', error)
@@ -117,9 +141,9 @@ export function CountryModal({ initialData, mode = 'create', trigger, onSuccess 
   const handleChange = (field: string) => (value: string) => {
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: field === 'display_order' ? parseInt(value) || 0 : value
     }))
-    
+
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({
@@ -199,6 +223,69 @@ export function CountryModal({ initialData, mode = 'create', trigger, onSuccess 
                 <AlertDescription>{errors.code}</AlertDescription>
               </Alert>
             )}
+          </div>
+
+          {/* Flag Emoji */}
+          <div className="space-y-2">
+            <Label htmlFor="flag_url">Drapeau (emoji) *</Label>
+            <Input
+              id="flag_url"
+              value={formData.flag_url}
+              onChange={(e) => handleChange('flag_url')(e.target.value)}
+              placeholder="Ex: 🇸🇳"
+              disabled={isSubmitting}
+              className="text-2xl"
+            />
+            <p className="text-sm text-muted-foreground">
+              Utilisez l&apos;emoji du drapeau du pays
+            </p>
+            {errors.flag_url && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>{errors.flag_url}</AlertDescription>
+              </Alert>
+            )}
+          </div>
+
+          {/* Display Order */}
+          <div className="space-y-2">
+            <Label htmlFor="display_order">Ordre d&apos;affichage</Label>
+            <Input
+              id="display_order"
+              type="number"
+              min="0"
+              value={formData.display_order}
+              onChange={(e) => handleChange('display_order')(e.target.value)}
+              placeholder="0"
+              disabled={isSubmitting}
+            />
+            <p className="text-sm text-muted-foreground">
+              Ordre d&apos;affichage sur le site (0 = premier)
+            </p>
+            {errors.display_order && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>{errors.display_order}</AlertDescription>
+              </Alert>
+            )}
+          </div>
+
+          {/* Is Supported */}
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="is_supported"
+              checked={formData.is_supported}
+              onCheckedChange={(checked) =>
+                setFormData(prev => ({ ...prev, is_supported: checked === true }))
+              }
+              disabled={isSubmitting}
+            />
+            <Label
+              htmlFor="is_supported"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+            >
+              Pays activement supporté (affiché sur la page d&apos;accueil)
+            </Label>
           </div>
 
           {/* Submit Buttons */}

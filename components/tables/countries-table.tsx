@@ -5,7 +5,8 @@ import { ServerFilteredDataTable } from '@/components/tables/server-filtered-dat
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { DeleteConfirmationModal } from '@/components/modals/delete-confirmation-modal'
-import { Globe, ExternalLink, Trash2 } from 'lucide-react'
+import { CountryModal } from '@/components/modals/country-modal'
+import { Globe, ExternalLink, Trash2, Edit } from 'lucide-react'
 import { ColumnDef } from '@tanstack/react-table'
 import Link from 'next/link'
 
@@ -13,6 +14,9 @@ interface Country {
   id: string
   name: string
   code: string
+  flag_url?: string
+  is_supported?: boolean
+  display_order?: number
   created_at: string
   _count?: {
     series: number
@@ -22,11 +26,22 @@ interface Country {
 
 const columns: ColumnDef<Country>[] = [
   {
+    accessorKey: 'display_order',
+    header: 'Ordre',
+    cell: ({ row }) => (
+      <Badge variant="outline" className="font-mono">
+        {row.original.display_order || 0}
+      </Badge>
+    ),
+  },
+  {
     accessorKey: 'name',
     header: 'Nom du pays',
     cell: ({ row }) => (
       <div className="flex items-center gap-2">
-        <Globe className="h-4 w-4 text-blue-600" />
+        {row.original.flag_url && (
+          <span className="text-2xl">{row.original.flag_url}</span>
+        )}
         <span className="font-medium">{row.getValue('name')}</span>
       </div>
     ),
@@ -38,6 +53,21 @@ const columns: ColumnDef<Country>[] = [
       <Badge variant="outline" className="font-mono">
         {row.getValue('code')}
       </Badge>
+    ),
+  },
+  {
+    accessorKey: 'is_supported',
+    header: 'Statut',
+    cell: ({ row }) => (
+      row.original.is_supported ? (
+        <Badge className="bg-green-500 hover:bg-green-600">
+          Supporté
+        </Badge>
+      ) : (
+        <Badge variant="secondary">
+          Expansion
+        </Badge>
+      )
     ),
   },
   {
@@ -82,6 +112,27 @@ const columns: ColumnDef<Country>[] = [
             <ExternalLink className="h-4 w-4" />
           </Link>
         </Button>
+        <CountryModal
+          mode="edit"
+          initialData={{
+            id: row.original.id,
+            name: row.original.name,
+            code: row.original.code,
+            flag_url: row.original.flag_url,
+            is_supported: row.original.is_supported,
+            display_order: row.original.display_order
+          }}
+          trigger={
+            <Button
+              size="sm"
+              variant="ghost"
+              className="hover:bg-blue-50"
+              title="Modifier"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+          }
+        />
         <DeleteConfirmationModal
           resourceType="country"
           resourceName={row.original.name}

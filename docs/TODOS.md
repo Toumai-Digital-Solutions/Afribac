@@ -12,10 +12,10 @@ Legend: [P0] Now, [P1] Next, [P2] Later
 
 
 ## Auth and Onboarding
-- [ ] [P0] Audit onboarding flow for missing profile data and reduce drop-off.
-- [ ] [P0] Add onboarding step for study goals and weekly availability.
-- [ ] [P1] Add optional parent/mentor invite flow.
-- [ ] [P1] Add profile completion checklist with progress indicator.
+- [x] [P0] Audit onboarding flow for missing profile data and reduce drop-off.
+- [x] [P0] Add onboarding step for study goals and weekly availability.
+- [x] [P1] Add optional parent/mentor invite flow.
+- [x] [P1] Add profile completion checklist with progress indicator.
 
 ## Student Core Experience
 - [x] [P0] Improve search and discovery filters (country, series, subject, topic, tags).

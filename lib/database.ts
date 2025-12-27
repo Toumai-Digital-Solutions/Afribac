@@ -181,7 +181,7 @@ export async function getAccessibleCourses() {
 
   // Students only see published courses
   if (profile.role === 'user') {
-    query = query.eq('status', 'publish')
+    query = query.eq('status', 'published')
   }
 
   const { data: courses } = await query.order('created_at', { ascending: false })
@@ -202,7 +202,7 @@ export async function updateUserStatus(userId: string, status: 'active' | 'suspe
 }
 
 // Update course status
-export async function updateCourseStatus(courseId: string, status: 'draft' | 'publish' | 'archived') {
+export async function updateCourseStatus(courseId: string, status: 'draft' | 'published' | 'archived') {
   const supabase = createClient()
   const { data, error } = await (supabase as any)
     .from('courses')

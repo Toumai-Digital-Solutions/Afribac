@@ -178,7 +178,7 @@ export default async function CoursesPage(props: CoursesPageProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {courses.filter(c => c.status === 'publish').length}
+              {courses.filter(c => c.status === 'published').length}
             </div>
           </CardContent>
         </Card>

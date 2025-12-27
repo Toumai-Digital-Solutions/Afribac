@@ -73,7 +73,7 @@ interface FormData {
   topic_id: string
   difficulty_level: number
   estimated_duration: number
-  status: 'draft' | 'publish' | 'archived'
+  status: 'draft' | 'published' | 'archived'
   pdf_url?: string
   pdf_filename?: string
   video_url?: string
@@ -259,7 +259,7 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
     }
   }, [formData.subject_id, formData.topic_id, topics])
 
-  const handleSubmit = async (status: 'draft' | 'publish' = 'draft') => {
+  const handleSubmit = async (status: 'draft' | 'published' = 'draft') => {
     if (!validateForm()) return
 
     setIsSubmitting(true)
@@ -312,8 +312,8 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
 
       toast.success(
         mode === 'edit' 
-          ? `Cours ${status === 'publish' ? 'publié' : 'sauvegardé'} avec succès`
-          : `Cours ${status === 'publish' ? 'créé et publié' : 'créé'} avec succès`
+          ? `Cours ${status === 'published' ? 'publié' : 'sauvegardé'} avec succès`
+          : `Cours ${status === 'published' ? 'créé et publié' : 'créé'} avec succès`
       )
 
       await logActivity({
@@ -617,7 +617,7 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
             {isSubmitting ? 'Sauvegarde...' : 'Sauvegarder'}
           </Button>
           
-          {formData.status === 'publish' && mode === 'edit' ? (
+          {formData.status === 'published' && mode === 'edit' ? (
             <Button
               variant="secondary"
               onClick={() => handleSubmit('draft')}
@@ -627,7 +627,7 @@ export function CourseEditor({ mode, initialData }: CourseEditorProps) {
             </Button>
           ) : (
             <Button
-              onClick={() => handleSubmit('publish')}
+              onClick={() => handleSubmit('published')}
               disabled={isSubmitting || !formData.title || !formData.subject_id}
             >
               <Eye className="h-4 w-4 mr-2" />

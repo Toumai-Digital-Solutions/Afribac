@@ -52,7 +52,7 @@ export default async function StudentNotesPage() {
             Capturez vos resumés et creez des flashcards par theme.
           </p>
         </div>
-        <Badge variant="outline">{profile.series?.name ?? "Serie"}</Badge>
+        <Badge variant="outline">{(Array.isArray(profile.series) ? (profile.series as any)[0]?.name : (profile.series as any)?.name) ?? "Serie"}</Badge>
       </div>
 
       {topicOptions.length > 0 ? (

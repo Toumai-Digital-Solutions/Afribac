@@ -168,9 +168,6 @@ export function QuizExerciseEditor({ mode, contentType, initialData }: QuizExerc
     if (!formData.subject_id) {
       newErrors.subject_id = 'La matière est requise'
     }
-    if (!formData.series_id) {
-      newErrors.series_id = 'La série est requise'
-    }
     if (formData.estimated_duration < 1) {
       newErrors.estimated_duration = 'La durée doit être positive'
     }
@@ -290,7 +287,7 @@ export function QuizExerciseEditor({ mode, contentType, initialData }: QuizExerc
         description: formData.description.trim() || null,
         content_type: formData.content_type,
         subject_id: formData.subject_id,
-        series_id: formData.series_id,
+        series_id: formData.series_id || null,
         course_id: formData.course_id || null,
         difficulty_level: formData.difficulty_level,
         estimated_duration: formData.estimated_duration,
@@ -844,15 +841,16 @@ export function QuizExerciseEditor({ mode, contentType, initialData }: QuizExerc
               </div>
 
               <div>
-                <Label htmlFor="series">Série *</Label>
-                <Select 
-                  value={formData.series_id} 
-                  onValueChange={handleChange('series_id')}
+                <Label htmlFor="series">Série (optionnel)</Label>
+                <Select
+                  value={formData.series_id || 'none'}
+                  onValueChange={(value) => handleChange('series_id')(value === 'none' ? '' : value)}
                 >
-                  <SelectTrigger className={errors.series_id ? 'border-red-500' : ''}>
+                  <SelectTrigger>
                     <SelectValue placeholder="Choisir une série" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">Aucune série (toutes les séries)</SelectItem>
                     {series.map((serie) => (
                       <SelectItem key={serie.id} value={serie.id}>
                         {serie.name} ({serie.countries?.name})
@@ -860,9 +858,6 @@ export function QuizExerciseEditor({ mode, contentType, initialData }: QuizExerc
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.series_id && (
-                  <p className="text-sm text-red-500 mt-1">{errors.series_id}</p>
-                )}
               </div>
 
               <div>

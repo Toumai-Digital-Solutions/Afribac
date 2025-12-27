@@ -16,7 +16,7 @@ export function CourseStatusBadge({ status, className }: CourseStatusBadgeProps)
       variant="outline"
       className={cn(
         "text-xs font-medium",
-        status === 'publish' && "border-green-500 text-green-700 bg-green-50",
+        status === 'published' && "border-green-500 text-green-700 bg-green-50",
         status === 'draft' && "border-gray-500 text-gray-700 bg-gray-50", 
         status === 'archived' && "border-amber-500 text-amber-700 bg-amber-50",
         className

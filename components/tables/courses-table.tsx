@@ -33,7 +33,7 @@ interface Course {
   topic_name?: string | null
   difficulty_level: number
   estimated_duration: number
-  status: 'draft' | 'publish' | 'archived'
+  status: 'draft' | 'published' | 'archived'
   view_count: number
   author_name: string | null
   series_names: string[]
@@ -56,7 +56,7 @@ const getDifficultyLabel = (level: number) => {
 
 const getStatusBadge = (status: string) => {
   switch (status) {
-    case 'publish':
+    case 'published':
       return <Badge className="bg-green-100 text-green-800">Publié</Badge>
     case 'draft':
       return <Badge className="bg-yellow-100 text-yellow-800">Brouillon</Badge>
@@ -229,7 +229,7 @@ const columns: ColumnDef<Course>[] = [
             <span className="sr-only">Modifier le cours</span>
           </Button>
         </Link>
-        {row.original.status === 'publish' && (
+        {row.original.status === 'published' && (
           <Link href={`/courses/${row.original.id}`}>
             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
               <ExternalLink className="h-4 w-4" />

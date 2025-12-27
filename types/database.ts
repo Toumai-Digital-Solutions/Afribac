@@ -1,9 +1,12 @@
 export type UserRole = 'user' | 'member' | 'admin'
 export type UserStatus = 'active' | 'suspended' | 'deleted'
-export type CourseStatus = 'draft' | 'publish' | 'archived'
+export type CourseStatus = 'draft' | 'published' | 'archived'
 export type TagType = 'chapter' | 'topic' | 'difficulty' | 'exam_type' | 'school'
 export type QuestionType = 'multiple_choice' | 'true_false' | 'open_ended'
 export type StudyGoal = 'baccalaureat' | 'improve_grades' | 'catch_up' | 'deepen_knowledge' | 'other'
+export type AIServiceType = 'copilot' | 'extraction'
+export type AIProvider = 'openai' | 'gemini'
+export type AILogStatus = 'success' | 'error' | 'timeout'
 
 export interface Database {
   public: {
@@ -45,6 +48,103 @@ export interface Database {
           entity_name?: string | null
           status?: string | null
           note?: string | null
+          metadata?: any
+          created_at?: string
+        }
+      }
+      ai_settings: {
+        Row: {
+          id: string
+          setting_key: AIServiceType
+          provider: AIProvider
+          model_name: string
+          temperature: number
+          max_output_tokens: number
+          is_active: boolean
+          description: string | null
+          metadata: any
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          setting_key: AIServiceType
+          provider: AIProvider
+          model_name: string
+          temperature?: number
+          max_output_tokens?: number
+          is_active?: boolean
+          description?: string | null
+          metadata?: any
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          setting_key?: AIServiceType
+          provider?: AIProvider
+          model_name?: string
+          temperature?: number
+          max_output_tokens?: number
+          is_active?: boolean
+          description?: string | null
+          metadata?: any
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      ai_usage_logs: {
+        Row: {
+          id: string
+          service_type: AIServiceType
+          user_id: string | null
+          provider: AIProvider
+          model_name: string
+          prompt_summary: string | null
+          status: AILogStatus
+          error_message: string | null
+          input_tokens: number | null
+          output_tokens: number | null
+          total_tokens: number | null
+          processing_time_ms: number | null
+          reference_type: string | null
+          reference_id: string | null
+          metadata: any
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          service_type: AIServiceType
+          user_id?: string | null
+          provider: AIProvider
+          model_name: string
+          prompt_summary?: string | null
+          status: AILogStatus
+          error_message?: string | null
+          input_tokens?: number | null
+          output_tokens?: number | null
+          total_tokens?: number | null
+          processing_time_ms?: number | null
+          reference_type?: string | null
+          reference_id?: string | null
+          metadata?: any
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          service_type?: AIServiceType
+          user_id?: string | null
+          provider?: AIProvider
+          model_name?: string
+          prompt_summary?: string | null
+          status?: AILogStatus
+          error_message?: string | null
+          input_tokens?: number | null
+          output_tokens?: number | null
+          total_tokens?: number | null
+          processing_time_ms?: number | null
+          reference_type?: string | null
+          reference_id?: string | null
           metadata?: any
           created_at?: string
         }
@@ -1118,3 +1218,13 @@ export const LEVEL_COLORS: Record<number, string> = {
   9: '#F97316', // orange
   10: '#FFD700', // gold
 }
+
+// AI Settings convenience types
+export type AISetting = Database['public']['Tables']['ai_settings']['Row']
+export type AISettingInsert = Database['public']['Tables']['ai_settings']['Insert']
+export type AISettingUpdate = Database['public']['Tables']['ai_settings']['Update']
+
+// AI Usage Logs convenience types
+export type AIUsageLog = Database['public']['Tables']['ai_usage_logs']['Row']
+export type AIUsageLogInsert = Database['public']['Tables']['ai_usage_logs']['Insert']
+export type AIUsageLogUpdate = Database['public']['Tables']['ai_usage_logs']['Update']

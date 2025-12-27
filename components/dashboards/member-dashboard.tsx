@@ -84,7 +84,7 @@ export function MemberDashboard({ profile }: MemberDashboardProps) {
         supabase.from('courses').select('*', { count: 'exact' }).eq('created_by', profile.id),
         supabase.from('exams').select('*', { count: 'exact' }).eq('created_by', profile.id),
         supabase.from('quiz_exercises').select('*', { count: 'exact' }).eq('created_by', profile.id),
-        supabase.from('courses').select('*', { count: 'exact' }).eq('created_by', profile.id).eq('status', 'publish'),
+        supabase.from('courses').select('*', { count: 'exact' }).eq('created_by', profile.id).eq('status', 'published'),
         supabase.from('courses').select('*', { count: 'exact' }).eq('created_by', profile.id).eq('status', 'draft')
       ])
 
@@ -125,7 +125,7 @@ export function MemberDashboard({ profile }: MemberDashboardProps) {
           topic:topics(id, name)
         `)
         .eq('created_by', profile.id)
-        .eq('status', 'publish')
+        .eq('status', 'published')
         .order('view_count', { ascending: false })
         .limit(3)
 
@@ -178,7 +178,7 @@ export function MemberDashboard({ profile }: MemberDashboardProps) {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'publish':
+      case 'published':
         return <Badge className="bg-green-100 text-green-800 text-xs">Publié</Badge>
       case 'draft':
         return <Badge className="bg-yellow-100 text-yellow-800 text-xs">Brouillon</Badge>

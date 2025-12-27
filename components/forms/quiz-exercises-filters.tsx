@@ -17,14 +17,21 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Subject, Series } from '@/types/database'
 
+interface Course {
+  id: string
+  title: string
+}
+
 interface QuizExercisesFiltersProps {
   search: string
   content_type: string
   subject_id: string
   series_id: string
+  course_id: string
   status: string
   subjects: Subject[]
   series: (Series & { countries: { name: string } })[]
+  courses: Course[]
 }
 
 export function QuizExercisesFilters({
@@ -32,9 +39,11 @@ export function QuizExercisesFilters({
   content_type,
   subject_id,
   series_id,
+  course_id,
   status,
   subjects,
   series,
+  courses,
 }: QuizExercisesFiltersProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -58,7 +67,7 @@ export function QuizExercisesFilters({
     router.push('/dashboard/content/quiz')
   }, [router])
 
-  const activeFiltersCount = [content_type, subject_id, series_id, status, search].filter(Boolean).length
+  const activeFiltersCount = [content_type, subject_id, series_id, course_id, status, search].filter(Boolean).length
 
   const subjectOptions: AutocompleteOption[] = [
     { value: 'all', label: 'Toutes les matières' },
@@ -83,6 +92,15 @@ export function QuizExercisesFilters({
     })),
   ]
 
+  const courseOptions: AutocompleteOption[] = [
+    { value: 'all', label: 'Tous les cours' },
+    { value: 'none', label: 'Sans cours (autonomes)' },
+    ...courses.map((course) => ({
+      value: course.id,
+      label: course.title,
+    })),
+  ]
+
   return (
     <Card>
       <CardContent className="p-4">
@@ -99,7 +117,7 @@ export function QuizExercisesFilters({
           </div>
 
           {/* Filters */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
               <label className="text-sm font-medium mb-2 block">Type</label>
               <Select value={content_type || 'all'} onValueChange={(value) => updateFilters({ content_type: value })}>
@@ -135,6 +153,18 @@ export function QuizExercisesFilters({
                 placeholder="Toutes les séries"
                 searchPlaceholder="Rechercher une série..."
                 emptyText="Aucune série trouvée"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Cours</label>
+              <Autocomplete
+                value={course_id || 'all'}
+                onChange={(nextValue) => updateFilters({ course_id: nextValue })}
+                options={courseOptions}
+                placeholder="Tous les cours"
+                searchPlaceholder="Rechercher un cours..."
+                emptyText="Aucun cours trouvé"
               />
             </div>
 

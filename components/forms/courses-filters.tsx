@@ -127,7 +127,7 @@ export function CoursesFilters({
   const statusOptions: AutocompleteOption[] = [
     { value: 'all', label: 'Tous les statuts' },
     { value: 'draft', label: 'Brouillon' },
-    { value: 'publish', label: 'Publié' },
+    { value: 'published', label: 'Publié' },
     { value: 'archived', label: 'Archivé' },
   ]
 
@@ -234,7 +234,7 @@ export function CoursesFilters({
             )}
             {status && (
               <Badge variant="secondary">
-                Statut: {status === 'draft' ? 'Brouillon' : status === 'publish' ? 'Publié' : 'Archivé'}
+                Statut: {status === 'draft' ? 'Brouillon' : status === 'published' ? 'Publié' : 'Archivé'}
               </Badge>
             )}
           </div>

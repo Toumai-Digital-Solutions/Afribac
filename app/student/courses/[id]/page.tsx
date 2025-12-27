@@ -30,7 +30,7 @@ export default async function StudentCourseDetailPage({
       topic:topics(name)
     `)
     .eq('id', id)
-    .eq('status', 'publish')
+    .eq('status', 'published')
     .single()
 
   if (courseError || !course) {

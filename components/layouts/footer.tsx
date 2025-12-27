@@ -1,11 +1,42 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Mail, MapPin, Phone, Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
 import { motion } from "framer-motion";
 
+interface Country {
+  id: string;
+  name: string;
+  code: string;
+  flag_url: string;
+  is_supported: boolean;
+  display_order: number;
+}
+
 export function Footer() {
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [isLoadingCountries, setIsLoadingCountries] = useState(true);
+
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const response = await fetch('/api/countries?supported=true');
+        const data = await response.json();
+        if (data.countries) {
+          setCountries(data.countries);
+        }
+      } catch (error) {
+        console.error('Error fetching countries:', error);
+      } finally {
+        setIsLoadingCountries(false);
+      }
+    };
+
+    fetchCountries();
+  }, []);
+
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
@@ -39,15 +70,6 @@ export function Footer() {
     { name: "Twitter", icon: Twitter, href: "https://twitter.com/afribac" },
     { name: "Instagram", icon: Instagram, href: "https://instagram.com/afribac" },
     { name: "LinkedIn", icon: Linkedin, href: "https://linkedin.com/company/afribac" },
-  ];
-
-  const countries = [
-    { name: "Sénégal", flag: "🇸🇳" },
-    { name: "Côte d'Ivoire", flag: "🇨🇮" },
-    { name: "Mali", flag: "🇲🇱" },
-    { name: "Burkina Faso", flag: "🇧🇫" },
-    { name: "Niger", flag: "🇳🇪" },
-    { name: "Tchad", flag: "🇹🇩" },
   ];
 
   return (
@@ -163,14 +185,18 @@ export function Footer() {
             transition={{ duration: 0.5, delay: 0.3 }}
           >
             <h3 className="text-lg font-semibold mb-6 text-foreground">Nos pays</h3>
-            <ul className="space-y-3">
-              {countries.map((country) => (
-                <li key={country.name} className="flex items-center gap-3">
-                  <span className="text-2xl">{country.flag}</span>
-                  <span className="text-muted-foreground">{country.name}</span>
-                </li>
-              ))}
-            </ul>
+            {isLoadingCountries ? (
+              <div className="text-muted-foreground text-sm">Chargement...</div>
+            ) : (
+              <ul className="space-y-3">
+                {countries.map((country) => (
+                  <li key={country.id} className="flex items-center gap-3">
+                    <span className="text-2xl">{country.flag_url}</span>
+                    <span className="text-muted-foreground">{country.name}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </motion.div>
         </div>
 

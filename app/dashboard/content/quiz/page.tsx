@@ -18,6 +18,7 @@ async function getQuizExercisesData(filters: {
   content_type?: string
   subject_id?: string
   series_id?: string
+  course_id?: string
   status?: string
   page?: number
   limit?: number
@@ -43,6 +44,14 @@ async function getQuizExercisesData(filters: {
 
   if (filters.series_id) {
     query = query.eq('series_id', filters.series_id)
+  }
+
+  if (filters.course_id) {
+    if (filters.course_id === 'none') {
+      query = query.is('course_id', null)
+    } else {
+      query = query.eq('course_id', filters.course_id)
+    }
   }
 
   if (filters.status) {
@@ -73,14 +82,16 @@ async function getFilterOptions() {
 
   const [
     { data: subjects },
-    { data: series }
+    { data: series },
+    { data: courses }
   ] = await Promise.all([
     supabase.from('subjects').select('id, name, color').order('name'),
     supabase.from('series').select(`
-      id, 
-      name, 
+      id,
+      name,
       countries!inner(name)
-    `).order('name')
+    `).order('name'),
+    supabase.from('courses').select('id, title').order('title')
   ])
 
   return {
@@ -89,7 +100,8 @@ async function getFilterOptions() {
       id: s.id,
       name: s.name,
       countries: s.countries ? { name: s.countries.name } : undefined
-    }))
+    })),
+    courses: courses || []
   }
 }
 
@@ -118,12 +130,13 @@ export default async function QuizPage({ searchParams }: QuizPageProps) {
   const content_type = searchParams.content_type as string || ''
   const subject_id = searchParams.subject_id as string || ''
   const series_id = searchParams.series_id as string || ''
+  const course_id = searchParams.course_id as string || ''
   const status = searchParams.status as string || ''
   const page = parseInt(searchParams.page as string) || 1
 
   // Fetch data
   const [{ items, total }, filterOptions] = await Promise.all([
-    getQuizExercisesData({ search, content_type, subject_id, series_id, status, page }),
+    getQuizExercisesData({ search, content_type, subject_id, series_id, course_id, status, page }),
     getFilterOptions()
   ])
 
@@ -220,9 +233,11 @@ export default async function QuizPage({ searchParams }: QuizPageProps) {
         content_type={content_type}
         subject_id={subject_id}
         series_id={series_id}
+        course_id={course_id}
         status={status}
         subjects={filterOptions.subjects as any}
         series={filterOptions.series as any}
+        courses={filterOptions.courses as any}
       />
 
       {/* Table */}

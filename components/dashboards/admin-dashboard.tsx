@@ -456,10 +456,10 @@ export function AdminDashboard({ profile }: AdminDashboardProps) {
                     </p>
                   </div>
                   <Badge 
-                    variant={content.status === 'publish' ? 'default' : 'secondary'}
+                    variant={content.status === 'published' ? 'default' : 'secondary'}
                     className="text-xs"
                   >
-                    {content.status === 'publish' ? 'Publié' : 'Brouillon'}
+                    {content.status === 'published' ? 'Publié' : 'Brouillon'}
                   </Badge>
                 </div>
               ))}

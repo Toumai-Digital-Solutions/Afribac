@@ -33,7 +33,14 @@ export default async function CountriesPage({ searchParams }: CountriesPageProps
   let query = supabase
     .from('countries')
     .select(`
-      *,
+      id,
+      name,
+      code,
+      flag_url,
+      is_supported,
+      display_order,
+      created_at,
+      updated_at,
       series(count),
       profiles(count)
     `)
@@ -43,8 +50,8 @@ export default async function CountriesPage({ searchParams }: CountriesPageProps
     query = query.or(`name.ilike.%${search}%,code.ilike.%${search}%`)
   }
 
-  // Execute query with ordering
-  const { data: countries } = await query.order('name')
+  // Execute query with ordering by display_order, then name
+  const { data: countries } = await query.order('display_order').order('name')
 
   // Transform data for the table
   const tableData = countries?.map(country => ({

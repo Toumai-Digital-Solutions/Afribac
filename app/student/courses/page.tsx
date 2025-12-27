@@ -62,7 +62,7 @@ export default async function StudentCoursesPage({
   let coursesQuery = supabase
     .from('searchable_courses')
     .select('*')
-    .eq('status', 'publish')
+    .eq('status', 'published')
     .contains('country_ids', [profile.country_id])
     .contains('series_ids', [profile.series_id])
 

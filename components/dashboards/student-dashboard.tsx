@@ -155,7 +155,7 @@ export function StudentDashboard({ profile }: StudentDashboardProps) {
         let newCoursesQuery = supabase
           .from('searchable_courses')
           .select('*')
-          .eq('status', 'publish')
+          .eq('status', 'published')
           .order('created_at', { ascending: false })
           .limit(8)
 
@@ -180,7 +180,7 @@ export function StudentDashboard({ profile }: StudentDashboardProps) {
         const courseCountPromise = supabase
           .from('searchable_courses')
           .select('id', { count: 'exact', head: true })
-          .eq('status', 'publish')
+          .eq('status', 'published')
 
         const examCountPromise = supabase
           .from('exam_details')
@@ -349,7 +349,7 @@ export function StudentDashboard({ profile }: StudentDashboardProps) {
           supabase
             .from('searchable_courses')
             .select('*')
-            .eq('status', 'publish')
+            .eq('status', 'published')
             .ilike('title', `%${libraryQuery}%`)
             .order('created_at', { ascending: false })
             .limit(5),

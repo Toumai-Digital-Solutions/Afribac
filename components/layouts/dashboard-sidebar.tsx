@@ -109,6 +109,24 @@ export const navigationItems: NavItem[] = [
         roles: ['admin']
       },
       {
+        title: 'Tags',
+        href: '/dashboard/admin/tags',
+        icon: FileText,
+        roles: ['admin']
+      },
+      {
+        title: 'Configuration IA',
+        href: '/dashboard/admin/settings/ai',
+        icon: Settings,
+        roles: ['admin']
+      },
+      {
+        title: 'Logs IA',
+        href: '/dashboard/admin/settings/ai/logs',
+        icon: History,
+        roles: ['admin']
+      },
+      {
         title: 'Utilisateurs',
         href: '/dashboard/admin/users',
         icon: Users,

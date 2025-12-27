@@ -117,7 +117,7 @@ export default async function StudentLibraryPage({
   let coursesQuery = supabase
     .from('searchable_courses')
     .select('*')
-    .eq('status', 'publish')
+    .eq('status', 'published')
     .order('updated_at', { ascending: false })
     .limit(30)
 
@@ -252,30 +252,35 @@ export default async function StudentLibraryPage({
             <TabsContent key={section.value} value={section.value}>
               {section.items.length > 0 ? (
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {section.items.map((entry) => (
+                  {section.items.map((entry) => {
+                    const course = Array.isArray(entry.course) ? entry.course[0] : entry.course
+                    const subject = Array.isArray(course?.subject) ? course.subject[0] : course?.subject
+                    const topic = Array.isArray(course?.topic) ? course.topic[0] : course?.topic
+
+                    return (
                     <Card key={entry.course_id} className="border-muted-foreground/10 bg-muted/10">
                       <CardHeader className="space-y-3">
                         <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                          {entry.course?.subject?.name ? (
+                          {subject?.name ? (
                             <Badge variant="secondary" className="rounded-full bg-white text-foreground">
-                              {entry.course.subject.name}
+                              {subject.name}
                             </Badge>
                           ) : null}
-                          {entry.course?.topic?.name ? (
+                          {topic?.name ? (
                             <Badge variant="outline" className="rounded-full">
-                              {entry.course.topic.name}
+                              {topic.name}
                             </Badge>
                           ) : null}
                           <Badge variant="outline" className="rounded-full">
-                            {formatDifficulty(entry.course?.difficulty_level ?? null)}
+                            {formatDifficulty(course?.difficulty_level ?? null)}
                           </Badge>
                         </div>
                         <CardTitle className="text-lg leading-tight">
-                          {entry.course?.title}
+                          {course?.title}
                         </CardTitle>
-                        {entry.course?.description ? (
+                        {course?.description ? (
                           <CardDescription className="leading-relaxed text-muted-foreground">
-                            {entry.course.description}
+                            {course.description}
                           </CardDescription>
                         ) : null}
                       </CardHeader>
@@ -306,7 +311,8 @@ export default async function StudentLibraryPage({
                         </Link>
                       </CardContent>
                     </Card>
-                  ))}
+                    )
+                  })}
                 </div>
               ) : (
                 <Card className="border-dashed">

@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,14 +14,29 @@ import { AnimatedGradientText } from "@/components/ui/animated-gradient-text";
 import { StatsCounter } from "@/components/ui/stats-counter";
 import { Header } from "@/components/layouts/header";
 import { Footer } from "@/components/layouts/footer";
-import { 
-  FloatingParticles, 
-  GeometricShapes, 
-  MovingGradientBackground, 
-  FloatingIcons, 
-  WaveAnimation, 
-  GridPattern 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+  FloatingParticles,
+  GeometricShapes,
+  MovingGradientBackground,
+  FloatingIcons,
+  WaveAnimation,
+  GridPattern
 } from "@/components/ui/animated-background";
+
+interface Country {
+  id: string;
+  name: string;
+  code: string;
+  flag_url: string;
+  is_supported: boolean;
+  display_order: number;
+}
 
 const HeroSection = () => {
   const words = [
@@ -319,95 +337,116 @@ const TestimonialsSection = () => {
   );
 };
 
-const CountriesSection = () => {
-  const countries = [
-    { flag: "🇸🇳", name: "Sénégal", students: "800+", successRate: "98%", color: "from-green-500 to-red-500" },
-    { flag: "🇨🇮", name: "Côte d'Ivoire", students: "650+", successRate: "96%", color: "from-orange-500 to-green-500" },
-    { flag: "🇲🇱", name: "Mali", students: "420+", successRate: "97%", color: "from-green-500 to-yellow-500" },
-    { flag: "🇧🇫", name: "Burkina Faso", students: "280+", successRate: "95%", color: "from-red-500 to-green-500" },
-    { flag: "🇳🇪", name: "Niger", students: "200+", successRate: "94%", color: "from-orange-500 to-blue-500" },
-    { flag: "🇹🇩", name: "Tchad", students: "150+", successRate: "93%", color: "from-blue-500 to-yellow-500" }
+const HowItWorksSection = () => {
+  const steps = [
+    {
+      title: "Inscription gratuite",
+      description: "Crée ton compte en quelques secondes pour accéder à toutes les ressources.",
+      icon: <Users className="h-8 w-8 text-blue-500" />,
+      color: "from-blue-500/20 to-cyan-500/20"
+    },
+    {
+      title: "Choisis ta série",
+      description: "Accède aux cours et exercices spécifiques à ta série (S, L, ES).",
+      icon: <BookOpen className="h-8 w-8 text-purple-500" />,
+      color: "from-purple-500/20 to-pink-500/20"
+    },
+    {
+      title: "Pratique intensive",
+      description: "Entraîne-toi avec des milliers d'exercices corrigés et des anciens sujets.",
+      icon: <Target className="h-8 w-8 text-orange-500" />,
+      color: "from-orange-500/20 to-red-500/20"
+    },
+    {
+      title: "Réussis ton Bac",
+      description: "Suis tes progrès et arrive serein le jour de l'examen.",
+      icon: <Trophy className="h-8 w-8 text-green-500" />,
+      color: "from-green-500/20 to-emerald-500/20"
+    }
   ];
 
   return (
-    <section id="countries" className="py-24 px-4 bg-gradient-to-br from-background to-muted/50 relative overflow-hidden">
-      {/* Dynamic Background */}
-      <MovingGradientBackground />
-      <FloatingParticles className="opacity-50" />
-      <div className="container mx-auto text-center">
-        {/* Section Header */}
-        <div className="space-y-4 mb-16">
+    <section id="how-it-works" className="py-24 px-4 relative overflow-hidden">
+      <div className="container mx-auto">
+        <div className="text-center space-y-4 mb-16">
           <AnimatedGradientText>
-            🌍 Pays supportés
+            🚀 Comment ça marche ?
           </AnimatedGradientText>
           <h2 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-            Présent dans 6 pays d&apos;Afrique
+            Ta route vers le succès
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Des programmes adaptés aux spécificités de chaque système éducatif national
-          </p>
         </div>
 
-        {/* Countries Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
-          {countries.map((country, index) => (
-            <Card key={index} className="group relative overflow-hidden hover:scale-110 transition-all duration-300 hover:shadow-xl border-2 hover:border-primary/50">
-              <div className={`absolute inset-0 bg-gradient-to-br ${country.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`} />
-              
-              <CardContent className="p-6 text-center relative z-10">
-                <div className="text-6xl mb-4 transform group-hover:scale-125 transition-transform duration-300 animate-float" style={{ animationDelay: `${index * 0.5}s` }}>
-                  {country.flag}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {steps.map((step, index) => (
+            <div key={index} className="relative group">
+              <div className={`absolute inset-0 bg-gradient-to-br ${step.color} blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+              <div className="relative p-8 rounded-2xl border border-border bg-background/50 backdrop-blur-sm hover:border-primary/50 transition-all duration-300 h-full">
+                <div className="mb-6 p-4 rounded-xl bg-background inline-block shadow-sm">
+                  {step.icon}
                 </div>
-                <h3 className="font-semibold text-lg mb-2 group-hover:text-primary transition-colors duration-300">
-                  {country.name}
-                </h3>
-                <div className="text-sm text-muted-foreground space-y-1">
-                  <div><span className="font-medium text-primary text-lg">{country.students}</span> élèves</div>
-                  <div><span className="font-medium text-green-500 text-lg">{country.successRate}</span> de réussite</div>
+                <h3 className="text-xl font-bold mb-4">{step.title}</h3>
+                <p className="text-muted-foreground">{step.description}</p>
+                <div className="absolute top-8 right-8 text-4xl font-black text-muted/10">
+                  0{index + 1}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
+      </div>
+    </section>
+  );
+};
 
-        {/* Call to Action */}
-        <div className="mt-16 space-y-8">
-          {/* For Students */}
-          <div className="p-8 rounded-2xl bg-gradient-to-r from-blue-500/5 to-purple-500/5 border border-blue-500/20">
-            <h3 className="text-2xl font-bold mb-4 text-center">
-              Ton pays n&apos;est pas encore listé ?
-            </h3>
-            <p className="text-muted-foreground text-center mb-6">
-              Nous travaillons activement pour étendre Afribac à d&apos;autres pays. Inscris-toi pour être notifié du lancement dans ta région !
-            </p>
-            <div className="flex justify-center">
-              <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300">
-                Me notifier du lancement
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+const FAQSection = () => {
+  const faqs = [
+    {
+      question: "Est-ce que l'accès est gratuit ?",
+      answer: "Oui, l'inscription et une grande partie des ressources de base sont gratuites. Nous proposons également des options premium pour un accompagnement plus personnalisé."
+    },
+    {
+      question: "Quelles séries sont supportées ?",
+      answer: "Afribac couvre actuellement les séries S (Scientifique), L (Littéraire) et ES (Économique et Sociale) pour le niveau Terminale."
+    },
+    {
+      question: "Puis-je utiliser Afribac sur mon téléphone ?",
+      answer: "Absolument ! La plateforme est entièrement 'responsive' et s'adapte parfaitement aux smartphones et tablettes pour te permettre de réviser partout."
+    },
+    {
+      question: "Les exercices sont-ils vraiment corrigés ?",
+      answer: "Oui, tous nos exercices et anciens sujets d'examen sont accompagnés de corrections détaillées et expliquées par des professeurs expérimentés."
+    },
+    {
+      question: "Comment puis-je suivre ma progression ?",
+      answer: "Ton tableau de bord personnel affiche tes statistiques par matière, tes scores aux quiz et tes points forts/faibles."
+    }
+  ];
 
-          {/* For Collaborators */}
-          <div className="p-8 rounded-2xl bg-gradient-to-r from-purple-500/5 to-pink-500/5 border border-purple-500/20">
-            <h3 className="text-2xl font-bold mb-4 text-center">
-              Tu es enseignant ou expert éducatif ?
-            </h3>
-            <p className="text-muted-foreground text-center mb-6">
-              Aide-nous à étendre Afribac dans ton pays ! Rejoins notre équipe de collaborateurs et contribue à révolutionner l&apos;éducation en Afrique.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transform hover:scale-105 transition-all duration-300">
-                <Users className="mr-2 h-4 w-4" />
-                Devenir collaborateur
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-              <Button variant="outline" className="border-2 hover:bg-purple-500/5">
-                Nous contacter
-              </Button>
-            </div>
-          </div>
+  return (
+    <section id="faq" className="py-24 px-4 bg-muted/30 relative overflow-hidden">
+      <div className="container mx-auto max-w-4xl">
+        <div className="text-center space-y-4 mb-16">
+          <AnimatedGradientText>
+            ❓ Questions fréquentes
+          </AnimatedGradientText>
+          <h2 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+            On répond à tes questions
+          </h2>
         </div>
+
+        <Accordion type="single" collapsible className="w-full space-y-4">
+          {faqs.map((faq, index) => (
+            <AccordionItem key={index} value={`item-${index}`} className="border rounded-xl bg-background px-6">
+              <AccordionTrigger className="text-left font-semibold py-6 hover:no-underline">
+                {faq.question}
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground pb-6">
+                {faq.answer}
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
       </div>
     </section>
   );
@@ -491,8 +530,9 @@ export default function Home() {
         
         <HeroSection />
         <FeaturesSection />
+        <HowItWorksSection />
         <TestimonialsSection />
-        <CountriesSection />
+        <FAQSection />
         <CTASection />
     </div>
       <Footer />

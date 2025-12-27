@@ -78,12 +78,12 @@ export default async function StudentPlannerPage() {
           </div>
           <h1 className="text-3xl font-bold">Plan de révision</h1>
           <p className="text-sm text-muted-foreground">
-            Optimisez vos révisions pour {profile.series?.name ?? "votre série"} ({profile.country?.name ?? "votre pays"}).
+            Optimisez vos révisions pour {profile.series?.[0]?.name ?? "votre série"} ({profile.country?.[0]?.name ?? "votre pays"}).
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Badge variant="outline">{profile.series?.name ?? "Série"}</Badge>
-          <Badge variant="outline">{profile.country?.name ?? "Pays"}</Badge>
+          <Badge variant="outline">{profile.series?.[0]?.name ?? "Série"}</Badge>
+          <Badge variant="outline">{profile.country?.[0]?.name ?? "Pays"}</Badge>
           <Badge variant="secondary" className="gap-1">
             <CalendarDays className="h-3.5 w-3.5" />
             {dateLabel}
