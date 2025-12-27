@@ -159,7 +159,7 @@ export default async function StudentSimulationPage() {
         <Card className="border-muted-foreground/10">
           <CardHeader>
             <CardTitle>Examens recommandés</CardTitle>
-            <CardDescription>Les sujets récents pour la série {profile.series?.name}</CardDescription>
+            <CardDescription>Les sujets récents pour la série {profile.series?.[0].name}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             {recommendations && recommendations.length > 0 ? (

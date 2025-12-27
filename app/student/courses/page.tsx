@@ -131,7 +131,7 @@ export default async function StudentCoursesPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Cours pour {profile.series?.name}</h1>
+          <h1 className="text-3xl font-bold">Cours pour {profile.series?.[0].name}</h1>
           <p className="text-muted-foreground">
             Retrouvez ici tous les cours publiés pour {profile.country?.name}
           </p>
@@ -153,7 +153,7 @@ export default async function StudentCoursesPage({
         }))}
         tags={(tags || []) as any}
         countryName={profile.country?.name}
-        seriesName={profile.series?.name}
+        seriesName={profile.series?.[0].name}
       />
 
       {availableCourses.length === 0 ? (

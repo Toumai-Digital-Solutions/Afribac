@@ -462,7 +462,7 @@ export function StudentDashboard({ profile }: StudentDashboardProps) {
                 Bonjour, {profile.full_name?.split(' ')[0] || 'Étudiant'} 👋
               </h1>
               <p className="mt-4 text-base leading-relaxed text-white/80">
-                Retrouvez ici un aperçu clair de votre progression, reprenez votre dernière leçon et explorez les nouvelles ressources sélectionnées pour {profile.series?.name || 'votre programme'}.
+                Retrouvez ici un aperçu clair de votre progression, reprenez votre dernière leçon et explorez les nouvelles ressources sélectionnées pour {profile.series?.[0].name || 'votre programme'}.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">

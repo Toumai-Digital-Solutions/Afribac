@@ -85,7 +85,7 @@ export default async function StudentExamsPage({
           </div>
           <div className="space-y-3">
             <h1 className="text-3xl font-semibold lg:text-4xl">
-              Examens pour {formatSeriesLabel(profile.series?.name, profile.country?.name)}
+              Examens pour {formatSeriesLabel(profile.series?.[0].name, profile.country?.name)}
             </h1>
             <p className="max-w-xl text-sm text-muted-foreground">
               Révisez avec des sujets authentiques. Les épreuves sont filtrées automatiquement selon votre série pour vous permettre de travailler efficacement, sans distraction.

@@ -126,7 +126,7 @@ export default async function StudentReviewPage() {
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Badge variant="outline">{profile.series?.name ?? "Serie"}</Badge>
+          <Badge variant="outline">{profile.series?.[0].name ?? "Serie"}</Badge>
           <Badge variant="secondary">{reviewItems.length} questions a revoir</Badge>
         </div>
       </div>
